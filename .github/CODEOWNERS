@@ -1,0 +1,7 @@
+rtl/front/  @HANDLE_A
+rtl/back/   @HANDLE_B
+tb/env/     @HANDLE_DV1
+tb/tests/   @HANDLE_DV1
+tb/sva/     @HANDLE_DV2
+docs/       @battuarnav
+UPDATE THIS

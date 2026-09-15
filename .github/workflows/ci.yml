@@ -1,0 +1,10 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  lint-and-sim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y verilator iverilog
+      - run: make lint
+      - run: make sim TEST=t_single_pkt SEED=1
