@@ -1,7 +1,8 @@
-rtl/front/  @HANDLE_A
-rtl/back/   @HANDLE_B
-tb/env/     @HANDLE_DV1
-tb/tests/   @HANDLE_DV1
-tb/sva/     @HANDLE_DV2
-docs/       @battuarnav
-UPDATE THIS
+# Reviewer per path. RTL halves are cross-listed: the listed user reviews, the other writes (CONTRIBUTING 8).
+rtl/front/  @zackkracky
+rtl/back/   @revantharigela
+rtl/pkg/    @revantharigela
+tb/env/     @sachin19-02
+tb/tests/   @sachin19-02
+tb/sva/     @coolboy965
+docs/       @zackkracky
