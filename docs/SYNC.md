@@ -7,6 +7,7 @@ Append-only. One block per sync: date, done / planned / blocked per person, deci
 - Owner setup items 1-6, 9 done; lint-and-sim added to ruleset after first green CI.
 - Toolchain lines (SETUP section 8), due 25 Sep:
   - Arnav:
+    zackkracky | Ubuntu 26.04.1 LTS | Verilator 5.032 2025-01-01 rev (Debian 5.032-1) |  Icarus Verilog version 12.0 (stable) () | git 2.53.0 |  Hi zackkracky
   - Revu:
   - Sachin:
   - Sag:
