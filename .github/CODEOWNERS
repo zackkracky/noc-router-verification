@@ -1,8 +1,13 @@
 # Reviewer per path. RTL halves are cross-listed: the listed user reviews, the other writes (CONTRIBUTING 8).
-rtl/front/  @zackkracky
-rtl/back/   @revantharigela
-rtl/pkg/    @revantharigela
-tb/env/     @sachin19-02
-tb/tests/   @sachin19-02
-tb/sva/     @coolboy965
-docs/       @zackkracky
+# Reviewer per path. Never the author of the path.
+rtl/front/    @zackkracky
+rtl/back/     @revantharigela
+rtl/pkg/      @revantharigela
+tb/env/       @coolboy965
+tb/tests/     @coolboy965
+tb/sva/       @sachin19-02
+tb/cov/       @sachin19-02
+scripts/      @zackkracky
+docs/         @coolboy965
+Makefile      @zackkracky
+.github/      @zackkracky
