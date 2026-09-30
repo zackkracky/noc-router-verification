@@ -16,7 +16,7 @@ TEST      ?= smoke
 SEED      ?= 1
 TESTS     ?= smoke
 FILELIST  ?= filelist.f
-BUILD     ?= build
+BUILD     ?= obj_dir
 LOGDIR    := $(BUILD)/logs
 
 # Warnings do not fail the build for now. Remove -Wno-fatal once the RTL is clean.
@@ -57,3 +57,6 @@ regress: build
 
 clean:
 	rm -rf $(BUILD)
+
+.PHONY: sim
+sim: run
