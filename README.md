@@ -10,10 +10,10 @@ Guide: Prof. P. Anuradha, CBIT. Target: DVCon India 2027.
 
 | Name | Code | GitHub | Owns | Verifies (cross SVA) | Paper section |
 |---|---|---|---|---|---|
-| Revu | R1 | @revantharigela | `rtl/front/`: `input_fifo`, `route_unit`, `input_port`, `vc_allocator` | Arnav's blocks | Router Architecture |
-| Arnav | R2 | @zackkracky | `rtl/back/`, `rtl/pkg/`: `rr_arbiter`, `switch_allocator`, `crossbar`, `output_unit`, `router_top`; coordinator | Revu's blocks | Results: area and timing |
+| Revanth | R1 | @revantharigela | `rtl/front/`: `input_fifo`, `route_unit`, `input_port`, `vc_allocator` | Arnav's blocks | Router Architecture |
+| Arnav | R2 | @zackkracky | `rtl/back/`, `rtl/pkg/`: `rr_arbiter`, `switch_allocator`, `crossbar`, `output_unit`, `router_top`; coordinator | Revanth's blocks | Results: area and timing |
 | Sachin | V1 | @sachin19-02 | `tb/env/`, `tb/tests/`, Makefile, CI | — | Verification Methodology |
-| Sag | V2 | @coolboy965 | `tb/sva/`, `tb/cov/`, `formal/`, scoreboard, bug log | — | Intro, Related Work, Conclusion; editor |
+| Aashish | V2 | @coolboy965 | `tb/sva/`, `tb/cov/`, `formal/`, scoreboard, bug log | — | Intro, Related Work, Conclusion; editor |
 
 Rule: the RTL owner never writes the assertions for their own block. Reviewer per path is in `.github/CODEOWNERS`.
 
@@ -39,14 +39,14 @@ Every test prints exactly one `PASS` or `FAIL` line per check; CI greps for `PAS
 
 | Path | Contents | Reviewer |
 |---|---|---|
-| `rtl/pkg/` | `noc_pkg.sv`: flit struct, port and type encodings, shared parameters | Revu |
+| `rtl/pkg/` | `noc_pkg.sv`: flit struct, port and type encodings, shared parameters | Revanth |
 | `rtl/front/` | input side: FIFOs, routing, input port, VC allocator | Arnav |
-| `rtl/back/` | output side: switch allocator, crossbar, output units, `router_top` | Revu |
+| `rtl/back/` | output side: switch allocator, crossbar, output units, `router_top` | Revanth |
 | `tb/env/` | `flit_if`, driver, monitor, scoreboard, generator, env | Sachin |
 | `tb/tests/` | one `t_<name>.sv` per test; `waves/` holds a `.gtkw` per test | Sachin |
-| `tb/sva/` | `PLAN.md`, one `<block>_sva.sv` per block, `bind_all.sv` | Sag |
+| `tb/sva/` | `PLAN.md`, one `<block>_sva.sv` per block, `bind_all.sv` | Aashish |
 | `scripts/` | `regress.sh`, `cov_merge.py` (Phase 2) | Sachin |
-| `docs/` | interface spec, bug log, contributing, setup; internal planning notes | Sag |
+| `docs/` | interface spec, bug log, contributing, setup; internal planning notes | Aashish |
 
 `tb/cov/`, `formal/`, `fpga/`, `docs/paper/` are added by PR when their first file exists (Phase 2, Phase 2, Phase 3, Mar 2027).
 
@@ -71,10 +71,10 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | Module | File | Owner | Purpose | Status |
 |---|---|---|---|---|
 | `noc_pkg` | `rtl/pkg/noc_pkg.sv` | Arnav | flit struct, enums, parameter defaults | planned |
-| `input_fifo` | `rtl/front/input_fifo.sv` | Revu | synchronous FWFT FIFO per VC, `count`, `credit_out` on dequeue | planned |
-| `route_unit` | `rtl/front/route_unit.sv` | Revu | combinational XY route compute, `out_port_onehot[4:0]` | planned |
-| `input_port` | `rtl/front/input_port.sv` | Revu | `NUM_VCS` FIFOs, per-VC state machine, credit return, SA request | planned |
-| `vc_allocator` | `rtl/front/vc_allocator.sv` | Revu | output VC allocation, round-robin per output VC, busy table | planned |
+| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, `credit_out` on dequeue | planned |
+| `route_unit` | `rtl/front/route_unit.sv` | Revanth | combinational XY route compute, `out_port_onehot[4:0]` | planned |
+| `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, credit return, SA request | planned |
+| `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, busy table | planned |
 | `rr_arbiter` | `rtl/back/rr_arbiter.sv` | Arnav | masked-priority round-robin arbiter, one-hot grant | planned |
 | `switch_allocator` | `rtl/back/switch_allocator.sv` | Arnav | separable input-first SA, re-arbitrated every cycle | planned |
 | `crossbar` | `rtl/back/crossbar.sv` | Arnav | 5x5 flit mux selected by stage-2 grant | planned |
@@ -146,7 +146,7 @@ Full rules: `docs/CONTRIBUTING.md`. The short version:
 |---|---|---|
 | `docs/INTERFACE.md` | flit format, link handshake, credits, front/back boundary, reset; tagged `spec-v1` | Sachin |
 | `docs/BUG_LOG.md` | every bug caught by a test or property: id, found by, symptom, root cause, fix | fix PR author |
-| `tb/sva/PLAN.md` | property list with group, owner, status | Sag |
+| `tb/sva/PLAN.md` | property list with group, owner, status | Aashish |
 
 ## References
 
