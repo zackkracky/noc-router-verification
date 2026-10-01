@@ -10,7 +10,6 @@ Phase 1a RTL starts 2026-10-01.
 2026-10-01, three gates together:
 - INTERFACE.md frozen and tagged `spec-v1` (Sachin author, all four sign off)
 - `tb/sva/PLAN.md` v1, 40 named properties with group and owner (Aashish)
-- simulator and formal-tool decision from the guide (Aashish, Arnav co-owns)
 
 ## Status
 | Item | Status | Owner |
@@ -24,7 +23,7 @@ Phase 1a RTL starts 2026-10-01.
 | Required status check added to ruleset | done | Arnav |
 | INTERFACE.md `spec-v1` | draft, review due 2026-10-01 | Sachin |
 | tb/sva/PLAN.md v1 | not started | Aashish |
-| Simulator and formal-tool decision | to be made | Aashish, Arnav |
+| Simulator and formal-tool decision | Xcelium and Jasper Gold | Aashish, Arnav |
 | Toolchain versions in SYNC.md | 1/4; arrives with each first commit | all |
 
 Counters: RTL modules 0/10. SVA 0/40. Coverage n/a. Bugs logged 0. Paper draft none.(Initial stage before implementations)
