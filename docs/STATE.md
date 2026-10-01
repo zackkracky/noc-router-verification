@@ -9,8 +9,7 @@ Phase 1a RTL starts 2026-10-01.
 ## Next deadline
 2026-10-01, three gates together:
 - INTERFACE.md frozen and tagged `spec-v1` (Sachin author, all four sign off)
-- `tb/sva/PLAN.md` v1, 40 named properties with group and owner (Sag)
-- simulator and formal-tool decision from the guide (Sag, Arnav co-owns)
+- `tb/sva/PLAN.md` v1, 40 named properties with group and owner (Aashish)
 
 ## Status
 | Item | Status | Owner |
@@ -23,8 +22,8 @@ Phase 1a RTL starts 2026-10-01.
 | INTERFACE.md spec-v1 | draft, review due 2026-10-01 | Sachin |
 | Required status check added to ruleset | done | Arnav |
 | INTERFACE.md `spec-v1` | draft, review due 2026-10-01 | Sachin |
-| tb/sva/PLAN.md v1 | not started | Sag |
-| Simulator and formal-tool decision | to be made | Sag, Arnav |
+| tb/sva/PLAN.md v1 | not started | Aashish |
+| Simulator and formal-tool decision | Xcelium and Jasper Gold | Aashish, Arnav |
 | Toolchain versions in SYNC.md | 1/4; arrives with each first commit | all |
 
 Counters: RTL modules 0/10. SVA 0/40. Coverage n/a. Bugs logged 0. Paper draft none.(Initial stage before implementations)
@@ -39,7 +38,7 @@ Counters: RTL modules 0/10. SVA 0/40. Coverage n/a. Bugs logged 0. Paper draft n
 ## Team
 | Name | Code | GitHub | Owns |
 |---|---|---|---|
-| Revu | R1 | @revantharigela | rtl/front: input_fifo, route_unit, input_port, vc_allocator |
+| Revanth | R1 | @revantharigela | rtl/front: input_fifo, route_unit, input_port, vc_allocator |
 | Arnav | R2 | @zackkracky | rtl/back, rtl/pkg: rr_arbiter, switch_allocator, crossbar, output_unit, router_top; coordinator |
 | Sachin | V1 | @sachin19-02 | tb/env, tb/tests, Makefile, CI |
 | Aashish | V2 | @coolboy965 | tb/sva, tb/cov, formal, scoreboard, bug log; docs editor |
