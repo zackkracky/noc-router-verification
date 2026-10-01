@@ -42,4 +42,21 @@ Blocked: PR #6 needs Arnav's review. cov and formal targets not in the Makefile 
 
 Decisions: make sim is an alias for make run. Tests print TEST PASSED and make run checks for it.
 
-Toolchain: sachin | Ubuntu 24.04.5 LTS | Verilator 5.020 2024-01-01 rev (Debian 5.020-1) | Icarus Verilog version 12.0 (stable) () | git 2.43.0 | Hi sachin19-02
+## 2026-10-01 (async, Sachin)
+
+Done:
+- STATE.md cleaned up: removed the extra deadline line for simulator/formal-tool decision and kept the status entry as Xcelium and Jasper Gold in the requested order.
+- README updated to use full names for Revanth and Aashish.
+- CODEOWNERS updated: Makefile owner changed from @zackkracky to @sachin19-02.
+- Repo documentation sync reflected the final decision with the updated wording and ownership.
+
+Planned:
+- Keep the docs aligned with the current repo hygiene and phase gates as the project moves into Phase 1a.
+- Continue the Makefile/CI and spec work on the active branch.
+
+Blocked:
+- None noted today.
+
+Decisions:
+- Simulator/formal tool choice is now recorded as Xcelium and Jasper Gold in the project status docs.
+- Documentation wording for deadline tracking should stay concise and avoid guide-specific phrasing.
