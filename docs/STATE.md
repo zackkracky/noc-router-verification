@@ -1,15 +1,15 @@
 # STATE
 
-Updated: YYYY-MM-DD (who). Single snapshot; history lives in SYNC.md.
+Updated: 2026-10-02 (Aashish). Single snapshot; history lives in SYNC.md.
 
 ## Phase
-Phase0-1bridge along with repo-hygyiene
-Phase 1a RTL starts 2026-10-01.
+Phase 1a: Block RTL and Unit Verification (1 Oct to 3 Nov 2026).
 
 ## Next deadline
-2026-10-01, three gates together:
-- INTERFACE.md frozen and tagged `spec-v1` (Sachin author, all four sign off)
-- `tb/sva/PLAN.md` v1, 40 named properties with group and owner (Aashish)
+2026-10-15, Phase 1a Gate 1:
+* `input_fifo` passing `t_fifo` seeds 1 to 5, lint clean (Revanth)
+* FIFO protocol SVA `P01` to `P06` bound and passing on `t_fifo` (Aashish)
+* Driver and monitor on `flit_if`, `t_fifo` harness (Sachin)
 
 ## Status
 | Item | Status | Owner |
@@ -17,23 +17,20 @@ Phase 1a RTL starts 2026-10-01.
 | Repo, branch protection, ruleset | done | Arnav |
 | .gitattributes, .gitignore, CODEOWNERS | done | Arnav |
 | README: roles, conventions, module list | done | Arnav |
-| Makefile: lint, sim, regress, cov, formal | pending, due 2026-09-29 | Sachin |
-| CI lint-and-sim green once | pending, due 2026-09-29 | Sachin |
-| INTERFACE.md spec-v1 | draft, review due 2026-10-01 | Sachin |
+| Makefile: lint, sim, regress, cov, formal | done (PR #6) | Sachin |
+| CI lint-and-sim green once | done | Sachin |
 | Required status check added to ruleset | done | Arnav |
-| INTERFACE.md `spec-v1` | draft, review due 2026-10-01 | Sachin |
-| tb/sva/PLAN.md v1 | not started | Aashish |
+| INTERFACE.md spec-v1 | draft in review, due 2026-10-01 | Sachin (all four sign off) |
+| tb/sva/PLAN.md v1 (40 properties) | PR open (`aashish/PLAN.md`) | Aashish |
+| Verilator T4 probe (`##[0:N]`) | done (passed) | Aashish |
 | Simulator and formal-tool decision | Xcelium and Jasper Gold | Aashish, Arnav |
-| Toolchain versions in SYNC.md | 1/4; arrives with each first commit | all |
+| Toolchain versions in SYNC.md | 3/4 (Arnav, Sachin, Aashish) | all |
 
-Counters: RTL modules 0/10. SVA 0/40. Coverage n/a. Bugs logged 0. Paper draft none.(Initial stage before implementations)
+Counters: RTL modules 0/10. SVA 0/40 (40 planned in PLAN.md). Coverage n/a. Bugs logged 0. Paper draft none.
 
 ## Blockers
-1. Makefile empty, so CI cannot run, so the required check cannot be added to the ruleset. Sachin, 2026-09-29.
-2. No simulator decided,  so Phase 2 is either covergroups or hand-rolled monitor counters. Undecided past 1 Oct means plan for the Verilator-only path. Aashish and Arnav. Decision to be made after consulting Dr.Anuradha.
-3. CI must run green once before the required check can be added to the ruleset. Sachin, 2026-09-29 — must land before Phase 1a branches open 2026-10-01.
-
-
+1. Semester 5 exam dates (mid-sem 2 and end-sem) unknown; Arnav pulling from timetable to evaluate Phase 1b schedule.
+2. None blocking active Phase 1a development.
 
 ## Team
 | Name | Code | GitHub | Owns |

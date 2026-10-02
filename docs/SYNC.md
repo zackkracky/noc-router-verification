@@ -9,9 +9,11 @@ Append-only. One block per sync: date, done / planned / blocked per person, deci
   - Arnav:
     zackkracky | Ubuntu 26.04.1 LTS | Verilator 5.032 2025-01-01 rev (Debian 5.032-1) |  Icarus Verilog version 12.0 (stable) () | git 2.53.0 |  Hi zackkracky
   - Revanth:
+
   - Sachin:
     sachin19-02 | Ubuntu 24.04.5 LTS | Verilator 5.020 2024-01-01 rev (Debian 5.020-1) | Icarus Verilog version 12.0 (stable) () | git 2.43.0 | Hi sachin19-02
   - Aashish:
+    sag | Ubuntu 24.04.2 LTS | Verilator 5.024 2024-04-05 | Icarus Verilog version 12.0 (stable) () | git 2.43.0 | Hi coolboy965
 - Decisions: bug log file is docs/BUG_LOG.md.
 
 ## 2026-09-27 (async, Arnav)
@@ -33,6 +35,7 @@ Open on 2026-10-01: INTERFACE.md spec-v1 sign-off (all four), tb/sva/PLAN.md v1 
 Unknown and blocking: semester 5 mid-sem 2 and end-sem dates. Arnav pulls them from the timetable this week; Phase 1b may be re-cut
 
 Deadline split: Sachin's Makefile + smoke CI moved to 2026-09-29 (independent of the spec), INTERFACE.md stays 2026-10-01. Reason: the required lint-and-sim check must be added to the ruleset before Phase 1a branches open on 1 Oct, so CI cannot share the freeze date.
+
 ## 2026-09-30 (async, Sachin)
 
 Done: Makefile (lint, build, run, sim, regress, clean) and filelist.f, submitted as PR #6 (replaces #5). CI lint-and-sim was green on #5. Build output goes to obj_dir/.
@@ -61,3 +64,23 @@ Blocked:
 Decisions:
 - Simulator/formal tool choice is now recorded as Xcelium and Jasper Gold in the project status docs.
 - Documentation wording for deadline tracking should stay concise and avoid guide-specific phrasing.
+
+## 2026-10-02 (async, Aashish)
+
+Done:
+- Authored `tb/sva/PLAN.md` (v1) with 40 named properties (12 Protocol, 18 Safety, 10 Liveness), opened PR `aashish/PLAN.md`.
+- Property ownership partitioned strictly per Rule 1: Aashish (24), Revanth (6 cross-checks on Arnav's blocks), Arnav (5 cross-checks on Revanth's blocks).
+- Resolved Technical Decision T4: executed Verilator probe (`probe_t4.sv`), confirming native support for bounded delay assertions (`##[0:N]`) under `--assert`.
+- Fixed starvation bound parameter $N = 48$ in specification conventions.
+- Updated `docs/SYNC.md` and `docs/STATE.md` to reflect Phase 0 exit and Phase 1a entry.
+
+Planned:
+- Merge `tb/sva/PLAN.md` upon review by Revanth and Arnav.
+- Review Sachin's `docs/INTERFACE.md` spec-v1 draft.
+- Scaffold `tb/sva/fifo_sva.sv` (properties P01–P06) ready for Revanth's `input_fifo` landing on Oct 15.
+
+Blocked:
+- None.
+
+Decisions:
+- Bounded liveness properties use `##[0:N]` in simulation and `s_eventually` under `ifdef FORMAL`.
