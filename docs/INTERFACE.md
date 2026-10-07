@@ -23,7 +23,7 @@ The bible says section 5 governs signals until `spec-v1` is tagged. This revisio
 
 Sign-off (name / date / reviewed commit):
 - Revanth — front RTL:
-- Arnav — back RTL and shared package:
+- Arnav — back RTL and shared package: Arnav / 2026-10-08 / 432ab16
 - Sachin — testbench/interface:
 - Aashish — assertions/scoreboard:
 
