@@ -21,19 +21,15 @@ Rule: the RTL owner never writes the assertions for their own block. Reviewer pe
 
 Setup per machine: `docs/SETUP.md` (WSL2 Ubuntu 24.04, Verilator 5.020, Icarus 12). Everything runs inside the Ubuntu terminal, repo under `~/`.
 
-```
+```bash
 git clone git@github.com:zackkracky/noc-router-verification.git
 cd noc-router-verification
-make lint                          # Verilator -Wall on rtl/, must be clean
-make sim TEST=t_smoke SEED=1       # one test, one seed, prints PASS
-make sim TEST=t_fifo SEED=3 TRACE=1  # with FST waveform for GTKWave
-make regress SEEDS=100             # Phase 2: all random tests, all seeds
-make cov                           # Phase 2: merged functional coverage
-make formal                        # Phase 2: SymbiYosys proofs
+make lint TEST=t_smoke
+make sim TEST=t_smoke SEED=1
 make clean
 ```
 
-Every test prints exactly one `PASS` or `FAIL` line per check; CI greps for `PASS`.
+The Phase 0 smoke test compiles and runs `t_smoke`, which prints `TEST PASSED`. `make sim` fails if that marker is missing. FIFO, router, regression, coverage, and formal checks are added as their implementations land.
 
 ## Layout
 
@@ -144,7 +140,7 @@ Full rules: `docs/CONTRIBUTING.md`. The short version:
 
 | File | What | Updated by |
 |---|---|---|
-| `docs/INTERFACE.md` | flit format, link handshake, credits, front/back boundary, reset; tagged `spec-v1` | Sachin |
+| `docs/INTERFACE.md` | flit format, link handshake, credits, front/back boundary, reset; Draft in PR #11; `spec-v1` pending team sign-off and RTL agreement. | Sachin |
 | `docs/BUG_LOG.md` | every bug caught by a test or property: id, found by, symptom, root cause, fix | fix PR author |
 | `tb/sva/PLAN.md` | property list with group, owner, status | Aashish |
 

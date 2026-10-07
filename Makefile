@@ -1,62 +1,47 @@
-# -----------------------------------------------------------------------------
-# NoC router verification - Makefile (V1)
-#   make help                     list targets
-#   make lint                     static check of every file in filelist.f
-#   make build                    compile RTL + testbench
-#   make run TEST=smoke SEED=3    build + run one test
-#   make regress                  run every test in TESTS
-#   make clean
-# -----------------------------------------------------------------------------
-SHELL    := /bin/bash
+SHELL := /bin/bash
 .SHELLFLAGS := -o pipefail -c
 
 VERILATOR ?= verilator
-TOP       ?= tb_top
-TEST      ?= smoke
-SEED      ?= 1
-TESTS     ?= smoke
-FILELIST  ?= filelist.f
-BUILD     ?= obj_dir
-LOGDIR    := $(BUILD)/logs
+TEST ?= t_smoke
+SEED ?= 1
+FILELIST ?= filelist.f
+BUILD := obj_$(TEST)
+LOGDIR := logs
 
-# Warnings do not fail the build for now. Remove -Wno-fatal once the RTL is clean.
-VFLAGS    := --timing -Wall -Wno-fatal --top-module $(TOP) -f $(FILELIST)
+# Non-comment source paths. An empty file list is an error.
+SRCS := $(shell sed -e 's/#.*//' -e '/^[[:space:]]*$$/d' $(FILELIST) 2>/dev/null)
 
-# Source files listed in filelist.f (comments and blank lines ignored)
-SRCS := $(shell grep -vE '^\s*(\#|$$)' $(FILELIST) 2>/dev/null)
-
-.PHONY: help lint build run regress clean
+.PHONY: help check-sources lint build sim run regress cov formal clean
 
 help:
-	@echo "targets: lint build run regress clean"
-	@echo "vars   : TEST=$(TEST) SEED=$(SEED) TOP=$(TOP) FILELIST=$(FILELIST)"
+	@echo "make lint"
+	@echo "make sim TEST=t_smoke SEED=1"
+	@echo "make clean"
 
-lint:
-	if [ -z "$(SRCS)" ]; then echo "[skip] $(FILELIST) has no sources yet"; exit 0; fi; \
-	$(VERILATOR) --lint-only $(VFLAGS)
+check-sources:
+	@test -n "$(SRCS)" || { echo "FAIL: $(FILELIST) contains no source files"; exit 1; }
 
-build:
-	if [ -z "$(SRCS)" ]; then echo "[skip] $(FILELIST) has no sources yet"; exit 0; fi; \
-	$(VERILATOR) --binary $(VFLAGS) --Mdir $(BUILD) -o sim
+lint: check-sources
+	$(VERILATOR) --lint-only --timing -Wall --top-module $(TEST) -f $(FILELIST)
 
-run: build
-	if [ -z "$(SRCS)" ]; then echo "[skip] nothing to run"; exit 0; fi; \
-	mkdir -p $(LOGDIR); \
-	$(BUILD)/sim +TEST=$(TEST) +verilator+seed+$(SEED) +verilator+rand+reset+2 \
-	| tee $(LOGDIR)/$(TEST)_s$(SEED).log; \
-	grep -q "TEST PASSED" $(LOGDIR)/$(TEST)_s$(SEED).log \
-	|| { echo "FAIL: $(TEST) seed $(SEED)"; exit 1; }
+build: check-sources
+	$(VERILATOR) --binary --timing -Wall -Wno-fatal --top-module $(TEST) -f $(FILELIST) --Mdir $(BUILD) -o sim
 
-regress: build
-	if [ -z "$(SRCS)" ]; then echo "[skip] nothing to run"; exit 0; fi; \
-	fail=0; \
-	for t in $(TESTS); do \
-	$(MAKE) --no-print-directory run TEST=$$t SEED=$(SEED) || fail=1; \
-	done; \
-	exit $$fail
+sim: build
+	@mkdir -p $(LOGDIR)
+	@$(BUILD)/sim +seed=$(SEED) +verilator+seed+$(SEED) | tee $(LOGDIR)/$(TEST)_s$(SEED).log
+	@grep -qx "TEST PASSED" $(LOGDIR)/$(TEST)_s$(SEED).log || { echo "FAIL: $(TEST) did not print TEST PASSED"; exit 1; }
+
+run: sim
+
+regress:
+	@echo "not yet: Phase 2"
+
+cov:
+	@echo "not yet: Phase 2"
+
+formal:
+	@echo "not yet: Phase 2"
 
 clean:
-	rm -rf $(BUILD)
-
-.PHONY: sim
-sim: run
+	rm -rf obj_* logs
