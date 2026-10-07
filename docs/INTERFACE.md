@@ -27,7 +27,7 @@ Sign-off (name / date / reviewed commit):
 - Sachin — testbench/interface:
 - Aashish — assertions/scoreboard:
 
-Merge only after these decisions agree with the package and both RTL halves. Tag the approved merge `spec-v1`; later incompatible changes require all-four review and a new version. This deliverable does not create a Git tag or assert approval.
+Merge this PR only after all four reviewers sign the decision table above. Keep the merge untagged. Tag `spec-v1` only after `noc_pkg.sv`, the front RTL, and the back RTL agree with this contract and the interface acceptance checks pass. Later incompatible changes require all-four review and a new version. This PR does not create a Git tag or assert approval.
 
 ## 1. Parameters and shared types
 
@@ -73,7 +73,7 @@ logic [FLIT_WIDTH-1:0] flit;
 
 For BODY/TAIL, the twelve coordinate-position bits are opaque extension data. RTL must not route on them or clear them. `hdr_t` is a positional view, not a claim those bits remain meaningful coordinates. Tests may fill them with arbitrary patterns to catch accidental interpretation. `pkt_id` and `flit_idx` remain metadata in every flit.
 
-Per link and VC, a packet is `HEAD, zero or more BODY, TAIL`, or one `HEAD_TAIL`. Index starts at 0 and increments; lengths supported by the 8-bit index are 1..256 (initial random tests use 1..8). The next packet may start only after the previous TAIL on that VC. Different VCs may interleave on the physical link. HEAD_TAIL follows normal RC/VA/SA and releases ownership when dequeued, not on arrival.
+Per link and VC, a packet is `HEAD, zero or more BODY, TAIL`, or one `HEAD_TAIL`. Index starts at 0 and increments; lengths supported by the 8-bit index are 1..256 (initial random tests use 1..8). The next packet may start only after the previous TAIL on that VC. Different VCs may interleave on the physical link. For each open packet on one link, every BODY and TAIL must use the same `flit_vc` as that packet's HEAD on that link. The router may assign a different VC on its output link, but must maintain packet VC continuity separately on each link. A monitor or property must report a mismatch. HEAD_TAIL follows normal RC/VA/SA and releases ownership when dequeued, not on arrival.
 
 A generator creates well-formed streams. Malformed traffic is outside functional correctness guarantees and must be reported by TB/SVA; do not silently claim that protocol checkers already exist. No packet authentication, CRC, retry, or error recovery is specified.
 
@@ -97,6 +97,8 @@ East increases X; North increases Y. Direct comparisons avoid unsigned-subtracti
 | `in_port` | in | `[PORT_W-1:0]` | Physical ingress; XY does not use it |
 | `route_credit` | in | `[NUM_PORTS-1:0][NUM_VCS-1:0][CNT_W-1:0]` | Registered current downstream credit counts from back half |
 | `out_port_onehot` | out | `[NUM_PORTS-1:0]` | Exactly one bit for valid XY coordinates |
+
+**Lint decision pending Arnav:** XY routing does not consume `route_credit`, but this port reserves credit counts for WF routing. Arnav will choose either a generate-gated implementation or a narrowly scoped `UNUSED` waiver with an explicit sink. Record the chosen implementation here before merge. Do not disable `UNUSED` for the whole design.
 
 The `route_credit` input is a **proposed T11 resolution**; it is not in the old draft. It carries counts, not only availability bits, so future WF can genuinely prefer an output with more capacity. XY ignores it. A future WF implementation must document its selection metric/tie-break and mesh proof; reserving the input does not implement WF or prove deadlock freedom. Unsupported algorithms must fail configuration validation rather than silently run XY. Sample/freeze a packet's chosen route before VA; never reroute its BODY/TAIL as credits change.
 
@@ -250,7 +252,7 @@ Dimensions below are **per indexed element**, not the whole array width. Use lea
 
 The granted-VC mux may sit in the front or top-level wiring, but it implements the same pure combinational selection. Unselected data are ignored. Tie inactive data to zero for readable waves.
 
-`sa_req = ACTIVE && !empty && ocredit_avail[held_port][held_vc]`. It must not depend on a grant. SA does not re-check credits; final grant must be a subset of requests. It grants at most one VC per input port and one input per output port. An input-stage winner that loses output arbitration does not dequeue. Advance its stage-1 round-robin pointer only on final grant; stage-2 pointer advances on its actual grant.
+`sa_req = ACTIVE && !empty && ocredit_avail[held_port][held_vc]`. It must not depend on a grant. SA does not re-check credits; final grant must be a subset of requests. For each output `o`, `$onehot0(xbar_sel[o])` holds. For each input `p`, `$onehot0(sa_grant[p])` holds across its VCs. Every asserted `sa_grant[p][v]` has exactly one corresponding `xbar_sel[o][p]`, where `o == sa_out_port[p][v]`, and every asserted `xbar_sel[o][p]` has exactly one corresponding final `sa_grant[p][v]`. `issue[o]` equals `|xbar_sel[o]`. An input FIFO dequeues and an output credit is debited only for that matched final grant. An input-stage winner that loses output arbitration does not dequeue. Advance its stage-1 round-robin pointer only on final grant; stage-2 pointer advances on its actual grant.
 
 VA guarantees at most one owner for each output VC **and at most one output-VC grant per input VC**. Independent output-VC arbiters require tie-breaking to enforce the second rule. Requests may stay high while waiting; a grant moves the requester to ACTIVE so it cannot repeatedly acquire VCs. Store the owner mapping until release. `ovc_free` and grants use pre-edge busy state: release at Ek makes the VC eligible in C(k+1), not for a simultaneous reassignment at Ek. The old tail is already in the output register and retains its own VC sideband.
 
