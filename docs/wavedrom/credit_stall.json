@@ -1,0 +1,115 @@
+{
+  "signal": [
+    {
+      "name": "clk",
+      "wave": "PPPPPPPPPPPP",
+      "phase": 0
+    },
+    {
+      "name": "cycle Ck",
+      "wave": "============",
+      "data": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11"
+      ]
+    },
+    {
+      "name": "credit",
+      "wave": "===...=.=.==",
+      "data": [
+        "2",
+        "1",
+        "0",
+        "1",
+        "0",
+        "1",
+        "2"
+      ]
+    },
+    {
+      "name": "issue",
+      "wave": "1.0...1.0..."
+    },
+    {
+      "name": "issue_flit",
+      "wave": "==xxxx==xxxx",
+      "data": [
+        "HEAD",
+        "BODY0",
+        "BODY1",
+        "TAIL"
+      ]
+    },
+    {
+      "name": "flit_valid",
+      "wave": "01.0...1.0.."
+    },
+    {
+      "name": "flit",
+      "wave": "x==xxxx==xxx",
+      "data": [
+        "HEAD",
+        "BODY0",
+        "BODY1",
+        "TAIL"
+      ]
+    },
+    {
+      "name": "flit_vc",
+      "wave": "x=.xxxx=.xxx",
+      "data": [
+        "0",
+        "0"
+      ]
+    },
+    {
+      "name": "rx_occupancy",
+      "wave": "=.==.==.=.=.",
+      "data": [
+        "0",
+        "1",
+        "2",
+        "1",
+        "0",
+        "1",
+        "0"
+      ]
+    },
+    {
+      "name": "rx_dequeue",
+      "wave": "0...1.0.1.0."
+    },
+    {
+      "name": "credit_valid",
+      "wave": "0....1.0.1.0"
+    },
+    {
+      "name": "credit_vc",
+      "wave": "xxxxx=.xx=.x",
+      "data": [
+        "0",
+        "0"
+      ]
+    }
+  ],
+  "head": {
+    "text": "Four-flit packet / VC0 / BUFFER_DEPTH=2",
+    "tick": 0
+  },
+  "foot": {
+    "text": "Ck sampled at right boundary Ek. A registered flit has already reserved credit."
+  },
+  "config": {
+    "hscale": 3
+  }
+}
