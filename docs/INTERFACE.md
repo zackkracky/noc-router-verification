@@ -24,7 +24,7 @@ The bible says section 5 governs signals until `spec-v1` is tagged. This revisio
 Sign-off (name / date / reviewed commit):
 - Revanth — front RTL:
 - Arnav — back RTL and shared package: Arnav / 2026-10-08 / 432ab16
-- Sachin — testbench/interface:
+- Sachin — testbench/interface: Sachin / 2026-10-10 / e578d2a
 - Aashish — assertions/scoreboard: Aashish / 2026-10-08 / 432ab16
 
 Merge this PR only after all four reviewers sign the decision table above. Keep the merge untagged. Tag `spec-v1` only after `noc_pkg.sv`, the front RTL, and the back RTL agree with this contract and the interface acceptance checks pass. Later incompatible changes require all-four review and a new version. This PR does not create a Git tag or assert approval.
@@ -310,5 +310,5 @@ Liveness bounds require persistent eligibility and environmental progress (event
 - Interface-only tests exercise both modport directions, all VC IDs, reset, stall/resume, simultaneous credit/send, and unchanged flit data; clocking-block probe passes on the chosen tool.
 - FIFO tests cover section 6's boundary table when Revanth's FIFO exists. Router tests confirm section 7 timing when router RTL exists.
 - Aashish reconciles actual PLAN.md contents and assertion sampling; do not copy old P23's zero-credit/output-valid check unchanged.
-- README and compile order include the new contract/interface/package. Current main has only commented entries in filelist.f, so green CI can currently mean “skipped”, not simulated.
+- README and compile order include the new contract/interface/package. The Phase 0 `t_smoke` test now compiles and runs on main; add the interface and package sources to `filelist.f` when their implementation lands.
 - Actual router/FIFO integration and Xcelium qualification remain separate from the included model/interface tests. Do not tag spec-v1 solely because this kit's example passes.
