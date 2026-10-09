@@ -12,5 +12,6 @@ __pycache__/
 *.pyc
 .vscode/
 *.swp
-*~obj_*/
+*~
+obj_*/
 logs/
