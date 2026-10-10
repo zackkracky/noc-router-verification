@@ -1,35 +1,38 @@
+
 SHELL := /bin/bash
 .SHELLFLAGS := -o pipefail -c
 
 VERILATOR ?= verilator
 TEST ?= t_smoke
 SEED ?= 1
-FILELIST ?= filelist.f
+FILELIST ?= $(if $(filter t_fifo,$(TEST)),filelist_fifo.f,filelist.f)
 BUILD := obj_$(TEST)
 LOGDIR := logs
 
-# Non-comment source paths. An empty file list is an error.
 SRCS := $(shell sed -e 's/#.*//' -e '/^[[:space:]]*$$/d' $(FILELIST) 2>/dev/null)
+VFLAGS := --timing -Wall -Wno-fatal --trace --top-module $(TEST) -f $(FILELIST)
 
 .PHONY: help check-sources lint build sim run regress cov formal clean
 
 help:
-	@echo "make lint"
+	@echo "make lint TEST=t_smoke"
 	@echo "make sim TEST=t_smoke SEED=1"
+	@echo "make lint TEST=t_fifo"
+	@echo "make sim TEST=t_fifo SEED=1"
 	@echo "make clean"
 
 check-sources:
 	@test -n "$(SRCS)" || { echo "FAIL: $(FILELIST) contains no source files"; exit 1; }
 
 lint: check-sources
-	$(VERILATOR) --lint-only --timing -Wall --top-module $(TEST) -f $(FILELIST)
+	$(VERILATOR) --lint-only --timing -Wall -Wno-fatal --top-module $(TEST) -f $(FILELIST)
 
 build: check-sources
-	$(VERILATOR) --binary --timing -Wall -Wno-fatal --top-module $(TEST) -f $(FILELIST) --Mdir $(BUILD) -o sim
+	$(VERILATOR) --binary $(VFLAGS) --Mdir $(BUILD) -o sim
 
 sim: build
 	@mkdir -p $(LOGDIR)
-	@$(BUILD)/sim +seed=$(SEED) +verilator+seed+$(SEED) | tee $(LOGDIR)/$(TEST)_s$(SEED).log
+	@set -o pipefail; $(BUILD)/sim +seed=$(SEED) +verilator+seed+$(SEED) +verilator+rand+reset+2 | tee $(LOGDIR)/$(TEST)_s$(SEED).log
 	@grep -qx "TEST PASSED" $(LOGDIR)/$(TEST)_s$(SEED).log || { echo "FAIL: $(TEST) did not print TEST PASSED"; exit 1; }
 
 run: sim
