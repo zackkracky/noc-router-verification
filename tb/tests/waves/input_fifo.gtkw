@@ -1,0 +1,38 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Sat Oct 10 15:44:47 2026
+[*]
+[dumpfile] "tb/tests/waves/input_fifo.vcd"
+[dumpfile_mtime] "Sat Oct 10 15:40:07 2026"
+[dumpfile_size] 2743
+[savefile] "tb/tests/waves/input_fifo.gtkw"
+[timestart] 0
+[size] 2560 1440
+[pos] -27 -24
+*-4.328095 50 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.t_fifo.
+[sst_width] 297
+[signals_width] 208
+[sst_expanded] 1
+[sst_vpaned_height] 449
+@22
+TOP.t_fifo.COUNT_W[31:0]
+@28
+TOP.t_fifo.clk
+TOP.t_fifo.count[2:0]
+TOP.t_fifo.credit_out
+TOP.t_fifo.empty
+TOP.t_fifo.full
+@22
+TOP.t_fifo.rd_data[7:0]
+@28
+TOP.t_fifo.rd_ready
+TOP.t_fifo.rd_valid
+TOP.t_fifo.rst_n
+@22
+TOP.t_fifo.wr_data[7:0]
+@28
+TOP.t_fifo.wr_valid
+[pattern_trace] 1
+[pattern_trace] 0
