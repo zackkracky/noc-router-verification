@@ -90,14 +90,13 @@ Decisions:
 Done:
 - Updated the Makefile on the PR #11 branch with Battu's revised targets, strict Verilator lint, standalone RTL lint, and optional GTKWave layout loading.
 - Confirmed `make help` works and `git diff --check` reports no whitespace errors.
+- After bringing in main's smoke test, make lint TEST=t_smoke and make sim TEST=t_smoke SEED=1 passed.
 - Coordinated FIFO credit timing and assertion integration with Revanth and Aashish.
 
 Planned:
-- Bring the latest `main` into PR #11, then run smoke lint and simulation.
 - Continue the FIFO testbench timing update and driver/monitor work on the Phase 1a branch.
 
 Blocked:
-- `make lint TEST=t_smoke` currently fails because this branch has no sources in `filelist.f` and no `tb/tests/t_smoke.f`.
 - Assertion-enabled P01–P06 integration awaits Revanth's pushed combinational credit fix and the legal-traffic test run.
 
 Decisions:

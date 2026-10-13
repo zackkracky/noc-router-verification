@@ -1,10 +1,15 @@
 name: ci
+
 on: [push, pull_request]
+
 jobs:
   lint-and-sim:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y verilator iverilog
-      - run: make lint
-      - run: make sim TEST=t_single_pkt SEED=1
+      - name: Install simulator
+        run: sudo apt-get update && sudo apt-get install -y verilator
+      - name: Lint smoke sources
+        run: make lint TEST=t_smoke
+      - name: Run smoke test
+        run: make sim TEST=t_smoke SEED=1
