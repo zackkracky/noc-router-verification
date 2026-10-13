@@ -1,4 +1,4 @@
-tb_noc_pkg:checks noc_pkg widths, helpers, encodings, and hdr round-trip at FLIT_WIDTH 32/64/128
+//tb_noc_pkg:checks noc_pkg widths, helpers, encodings, and hdr round-trip at various FLIT_WIDTH 32/64/128
 `timescale 1ns/1ps
 `default_nettype none
 
@@ -42,11 +42,11 @@ module pkg_probe
     hdr_in.pkt_id   = stim;
     hdr_in.flit_idx = ~stim;
     pay_in          = PAYLOAD_W'({16{stim ^ 8'h5A}}); // 128b pattern, sized to payload
-    flit            = {hdr_in, pay_in};               //pack the header+payload into the flit                // construction per s2
+    flit            = {hdr_in, pay_in};               //pack the header+payload into the flit
     hdr_out         = hdr_t'(flit[FLIT_WIDTH-1 -: HDR_W]);
     pay_out         = flit[PAYLOAD_W-1:0];
     err = (VC_W  != EXP_VC_W) || (32'(vc_sig) != (32'd1 << EXP_VC_W) - 1) || (CNT_W != EXP_CNT_W)
-    || (32'(cnt_sig) != (32'd1 << EXP_CNT_W) - 1) || (hdr_out != hdr_in)  || (pay_out != pay_in) '
+    || (32'(cnt_sig) != (32'd1 << EXP_CNT_W) - 1) || (hdr_out != hdr_in)  || (pay_out != pay_in)
     || (flit[FLIT_WIDTH-1 -: 2] != hdr_in.ftype);//checks top two bits to confirm consideration of most significant end
   end
 endmodule
