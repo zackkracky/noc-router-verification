@@ -22,7 +22,7 @@ The bible says section 5 governs signals until `spec-v1` is tagged. This revisio
 | Scoreboard identity | Globally unique outstanding `pkt_id` within this single-router testbench (maximum 256); release ID at observed completion | Sachin, Aashish |
 
 Sign-off (name / date / reviewed commit):
-- Revanth — front RTL:
+- Revanth — front RTL: Revanth/ 2026-10-13 / cc84961
 - Arnav — back RTL and shared package: Arnav / 2026-10-08 / 432ab16
 - Sachin — testbench/interface: Sachin / 2026-10-10 / e578d2a
 - Aashish — assertions/scoreboard: Aashish / 2026-10-08 / 432ab16
