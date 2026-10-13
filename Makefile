@@ -34,13 +34,13 @@ endif
 .PHONY: help check-sources lint lint-rtl build sim run waves regress cov formal clean
 
 help:
-	@echo "make lint     TEST=t_noc_pkg                Verilator -Wall, warnings fatal"
+	@echo "make lint     TEST=tb_noc_pkg                Verilator -Wall, warnings fatal"
 	@echo "make lint-rtl FILE=rtl/back/rr_arbiter.sv   one RTL file, no testbench"
-	@echo "make build    TEST=t_noc_pkg                compile only"
-	@echo "make sim      TEST=t_noc_pkg SEED=1         build + run, require TEST PASSED (run = alias)"
-	@echo "make sim      TEST=t_noc_pkg WAVES=1        also dump logs/<test>_s<seed>.fst"
-	@echo "make waves    TEST=t_noc_pkg SEED=1         open that dump in GTKWave"
-	@echo "make sim      TEST=t_noc_pkg SIM=xcelium    same test on xrun (VCD if WAVES=1)"
+	@echo "make build    TEST=tb_noc_pkg                compile only"
+	@echo "make sim      TEST=tb_noc_pkg SEED=1         build + run, require TEST PASSED (run = alias)"
+	@echo "make sim      TEST=tb_noc_pkg WAVES=1        also dump logs/<test>_s<seed>.fst"
+	@echo "make waves    TEST=tb_noc_pkg SEED=1         open that dump in GTKWave"
+	@echo "make sim      TEST=tb_noc_pkg SIM=xcelium    same test on xrun (VCD if WAVES=1)"
 	@echo "make regress | cov | formal                Phase 2"
 	@echo "make clean"
 
@@ -95,6 +95,6 @@ PKG ?= rtl/pkg/noc_pkg.sv
 lint-rtl:
 	@test -n "$(FILE)" || { echo "usage: make lint-rtl FILE=rtl/<path>.sv"; exit 1; }
 	@test -f "$(FILE)" || { echo "no such file: $(FILE)"; exit 1; }
-	@test "$(FILE)" != "$(PKG)" || { echo "package has no top module; use: make lint TEST=t_noc_pkg"; exit 1; }
+	@test "$(FILE)" != "$(PKG)" || { echo "package has no top module; use: make lint TEST=tb_noc_pkg"; exit 1; }
 	verilator --lint-only -Wall --timescale 1ns/1ps \
 	  $(wildcard $(PKG)) $(FILE)

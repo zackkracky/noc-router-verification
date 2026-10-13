@@ -1,0 +1,35 @@
+# Verilator/Icarus build
+obj_dir/
+obj_*/
+*.vvp
+
+#Simulation artifacts
+*.vcd
+*.fst
+*.fst.hier
+*.out
+
+#Logs
+*.log
+logs/
+
+#Coverage OUTPUT(anchored to root; NOT tb/cov source)
+/cov/
+*.info
+*.dat
+*.ucdb
+
+#Sim scratch (anchored; NOT tb/sim if you have one)
+/sim/
+
+#Python
+__pycache__/
+*.pyc
+
+#Editor
+.vscode/
+*.swp
+*~
+
+#GTKWave: ignore stray, force-add curated layouts with `git add -f`
+*.gtkw
