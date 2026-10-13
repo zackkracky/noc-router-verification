@@ -25,7 +25,7 @@ Sign-off (name / date / reviewed commit):
 - Revanth — front RTL: Revanth/ 2026-10-13 / cc84961
 - Arnav — back RTL and shared package: Arnav / 2026-10-08 / 432ab16
 - Sachin — testbench/interface: Sachin / 2026-10-10 / e578d2a
-- Aashish — assertions/scoreboard: Aashish / 2026-10-08 / 432ab16
+- Aashish — assertions/scoreboard: Aashish / 2026-10-08 / N/A
 
 Merge this PR only after all four reviewers sign the decision table above. Keep the merge untagged. Tag `spec-v1` only after `noc_pkg.sv`, the front RTL, and the back RTL agree with this contract and the interface acceptance checks pass. Later incompatible changes require all-four review and a new version. This PR does not create a Git tag or assert approval.
 
