@@ -1,47 +1,56 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -o pipefail -c
 
-VERILATOR ?= verilator
-TEST ?= t_smoke
-SEED ?= 1
-FILELIST ?= filelist.f
-BUILD := obj_$(TEST)
+SIM   ?= verilator
+TEST  ?= t_smoke
+SEED  ?= 1
+WAVES ?= 0
 LOGDIR := logs
+LOG    := $(LOGDIR)/$(TEST)_s$(SEED)_$(SIM).log
 
-# Non-comment source paths. An empty file list is an error.
+# tb/tests/$(TEST).f if present, else filelist.f; FILELIST= overrides
+FILELIST ?= $(firstword $(wildcard tb/tests/$(TEST).f) filelist.f)
 SRCS := $(shell sed -e 's/#.*//' -e '/^[[:space:]]*$$/d' $(FILELIST) 2>/dev/null)
 
-.PHONY: help check-sources lint build sim run regress cov formal clean
+VL := verilator --timing --timescale 1ns/1ps --top-module $(TEST) -f $(FILELIST)
+XR := xrun -sv -timescale 1ns/1ps -top $(TEST) -f $(FILELIST) -svseed $(SEED) \
+      -xmlibdirname xcelium_$(TEST) -nocopyright -l $(LOG)
 
-help:
-	@echo "make lint"
-	@echo "make sim TEST=t_smoke SEED=1"
-	@echo "make clean"
+ifeq ($(WAVES),1)
+  ifeq ($(SIM),xcelium)
+    WAVE := $(LOGDIR)/$(TEST)_s$(SEED).vcd
+    XR   += -access +r
+  else
+    WAVE := $(LOGDIR)/$(TEST)_s$(SEED).fst
+    VL   += --trace-fst
+  endif
+  PLUS := +dumpfile=$(WAVE)
+endif
+
+.PHONY: lint sim waves clean check-sources
 
 check-sources:
-	@test -n "$(SRCS)" || { echo "FAIL: $(FILELIST) contains no source files"; exit 1; }
+	@test -n "$(SRCS)" || { echo "FAIL: $(FILELIST) has no sources"; exit 1; }
 
 lint: check-sources
-	$(VERILATOR) --lint-only --timing -Wall --top-module $(TEST) -f $(FILELIST)
+ifeq ($(SIM),xcelium)
+	@mkdir -p $(LOGDIR); xrun -sv -timescale 1ns/1ps -top $(TEST) -f $(FILELIST) -xmlibdirname xcelium_$(TEST) -nocopyright -elaborate -l $(LOGDIR)/$(TEST)_lint_xcelium.log
+else
+	$(VL) --lint-only -Wall
+endif
 
-build: check-sources
-	$(VERILATOR) --binary --timing -Wall -Wno-fatal --top-module $(TEST) -f $(FILELIST) --Mdir $(BUILD) -o sim
-
-sim: build
+sim: check-sources
 	@mkdir -p $(LOGDIR)
-	@$(BUILD)/sim +seed=$(SEED) +verilator+seed+$(SEED) | tee $(LOGDIR)/$(TEST)_s$(SEED).log
-	@grep -qx "TEST PASSED" $(LOGDIR)/$(TEST)_s$(SEED).log || { echo "FAIL: $(TEST) did not print TEST PASSED"; exit 1; }
+ifeq ($(SIM),xcelium)
+	$(XR) $(PLUS)
+else
+	$(VL) --binary -Wall -Wno-fatal --Mdir obj_$(TEST) -o sim
+	obj_$(TEST)/sim +verilator+seed+$(SEED) +verilator+rand+reset+2 $(PLUS) | tee $(LOG)
+endif
+	@grep -qx "TEST PASSED" $(LOG) || { echo "FAIL: $(TEST)"; exit 1; }
 
-run: sim
-
-regress:
-	@echo "not yet: Phase 2"
-
-cov:
-	@echo "not yet: Phase 2"
-
-formal:
-	@echo "not yet: Phase 2"
+waves:
+	gtkwave $$(ls -t $(LOGDIR)/$(TEST)_s$(SEED).{fst,vcd} 2>/dev/null | head -1) &
 
 clean:
-	rm -rf obj_* logs
+	rm -rf obj_* xcelium_* logs xrun.history xrun.key *.shm

@@ -84,3 +84,25 @@ Blocked:
 
 Decisions:
 - Bounded liveness properties use `##[0:N]` in simulation and `s_eventually` under `ifdef FORMAL`.
+
+## 2026-10-14 (async, Arnav)
+
+Done:
+- `rtl/pkg/noc_pkg.sv`:INTERFACE.md s1-s2 constants, enums (`port_e`, `ftype_e`, `vc_state_e`),fixed 30-bit `hdr_t`, width helpers `vc_w()` and `cnt_w()`.
+- `tb/tests/tb_noc_pkg.sv` + `tb_noc_pkg.f`:checks `vc_w`/`cnt_w` at NUM_VCS 1-4 and BUFFER_DEPTH 2/4/8, header and payload round-trip at FLIT_WIDTH 32/64/128,enum encodings.Fails as expected when `hdr_t` width or field order is broken. Lint clean,sim passes,waveform image is in docs/figures/noc_pkg_op/.
+- CI: `tb_noc_pkg` lint and sim added.
+- Integration check for Gate 1: bound `fifo_sva` (aashish/sva-fifo) to `input_fifo` (revu/input-fifo). Found BUG-001, see Blocked.
+
+Planned:
+- Makefile: per-test filelist `tb/tests/<test>.f` picked automatically (FILELIST= still overrides); `WAVES=1` dumps to logs/; `make waves`; `SIM=xcelium`; `make lint-rtl FILE=...`; timescale set by the tools so RTL needs no `timescale.
+- `rr_arbiter`and `tb_rr_arbiter`,followed by `crossbar.sv`,`switch_allocator.sv` on a fresh branch.
+- Xcelium check of `tb_noc_pkg` on available LAB date.
+
+Decisions and notes for everyone:
+- New tests: add `tb/tests/<test>.f` (package first, then RTL, then test) and run `make sim TEST=<test>`.Do not edit `filelist.f` for a single test!!!
+- Use `noc_pkg::vc_w(NUM_VCS)` and `noc_pkg::cnt_w(BUFFER_DEPTH)`, not local `$clog2`.
+- Sachin: applies to `flit_if.sv`.Revanth: after this Makefile merges, move `filelist_fifo.f` to `tb/tests/, drop the branch's Makefile edits and dump waves to logs/ via `+dumpfile`.
+- Lint stays `-Wall` fatal. `-Wno-fatal` on `lint` let the FIFO's DECLFILENAME warning through!!!
+- Test prefix:ALWAYS USE tb_ NOT t_
+- `.gitignore` changed on `arnav/rtl-back-initial`
+- PR #11: all four sign-off lines must name the same final commit.
