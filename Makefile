@@ -5,12 +5,13 @@ SHELL := /bin/bash
 VERILATOR ?= verilator
 TEST ?= t_smoke
 SEED ?= 1
-FILELIST ?= $(if $(filter t_fifo,$(TEST)),filelist_fifo.f,filelist.f)
+FILELIST ?= $(firstword $(wildcard filelist_$(TEST).f) $(if $(filter t_fifo,$(TEST)),filelist_fifo.f) filelist.f)
 BUILD := obj_$(TEST)
 LOGDIR := logs
+TRACE ?= 0
 
 SRCS := $(shell sed -e 's/#.*//' -e '/^[[:space:]]*$$/d' $(FILELIST) 2>/dev/null)
-VFLAGS := --timing -Wall -Wno-fatal --trace --top-module $(TEST) -f $(FILELIST)
+VFLAGS := --timing -Wall -Wno-fatal --assert $(if $(filter 1,$(TRACE)),--trace,) --top-module $(TEST) -f $(FILELIST)
 
 .PHONY: help check-sources lint build sim run regress cov formal clean
 
@@ -32,7 +33,7 @@ build: check-sources
 
 sim: build
 	@mkdir -p $(LOGDIR)
-	@set -o pipefail; $(BUILD)/sim +seed=$(SEED) +verilator+seed+$(SEED) +verilator+rand+reset+2 | tee $(LOGDIR)/$(TEST)_s$(SEED).log
+	@set -o pipefail; $(BUILD)/sim +seed=$(SEED) +verilator+seed+$(SEED) +verilator+rand+reset+2 $(if $(filter 1,$(TRACE)),+vcd=$(BUILD)/$(TEST)_s$(SEED).vcd,) | tee $(LOGDIR)/$(TEST)_s$(SEED).log
 	@grep -qx "TEST PASSED" $(LOGDIR)/$(TEST)_s$(SEED).log || { echo "FAIL: $(TEST) did not print TEST PASSED"; exit 1; }
 
 run: sim

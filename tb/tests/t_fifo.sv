@@ -41,8 +41,38 @@ module t_fifo;
 
     always #5 clk <= ~clk;
 
+    property no_overflow;
+        @(posedge clk) disable iff (!rst_n)
+            full |-> !dut.do_write;
+    endproperty
+
+    property no_underflow;
+        @(posedge clk) disable iff (!rst_n)
+            empty |-> !dut.do_read;
+    endproperty
+
+    property count_in_range;
+        @(posedge clk) disable iff (!rst_n)
+            count <= COUNT_W'(DEPTH);
+    endproperty
+
+    assert property (no_overflow)
+        else $fatal(1, "FAIL: write attempted while FIFO full");
+
+    assert property (no_underflow)
+        else $fatal(1, "FAIL: read attempted while FIFO empty");
+
+    assert property (count_in_range)
+        else $fatal(1, "FAIL: FIFO count exceeded DEPTH");
+
+
+    string vcd;
+
     initial begin
-        $dumpfile("tb/tests/waves/input_fifo.vcd");
+        if (!$value$plusargs("vcd=%s", vcd))
+            vcd = "dump.vcd";
+
+        $dumpfile(vcd);
         $dumpvars(0, t_fifo);
     end
 
@@ -227,6 +257,11 @@ module t_fifo;
         $display("TEST PASSED");
 
         $finish;
+    end
+
+    initial begin
+        #100000;
+        $fatal(1, "TIMEOUT");
     end
 
 endmodule
