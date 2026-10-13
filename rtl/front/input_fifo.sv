@@ -1,4 +1,4 @@
- // input_fifo: synchronous FWFT FIFO; credit_out pulses one cycle after an accepted dequeue
+// input_fifo: synchronous FWFT FIFO; credit_out is combinational on an accepted dequeue
 `default_nettype none
 
 module input_fifo #(
@@ -81,14 +81,7 @@ module input_fifo #(
         end
     end
 
-    always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            credit_out <= 1'b0;
-        end
-        else begin
-            credit_out <= do_read;
-        end
-    end
+    assign credit_out = rst_n && do_read;
 
     assign rd_data  = mem[rd_ptr];
     assign rd_valid = !empty;
