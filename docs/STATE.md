@@ -1,6 +1,6 @@
 # STATE
 
-Updated: 2026-10-14 (Arnav). Single snapshot; history lives in SYNC.md.
+Updated: 2026-10-14 (Revanth). Single snapshot; history lives in SYNC.md.
 
 ## Phase
 Phase 1a: Block RTL and Unit Verification (1 Oct to 3 Nov 2026).
@@ -36,10 +36,10 @@ PM-001 (found 2026-10-14 by P06 with `bind_all`): `input_fifo.credit_out` is reg
 | tb/sva/PLAN.md v1 (40 properties) | merged (#7) | Aashish |
 | Verilator T4 probe (`##[0:N]`) | done (passed) | Aashish |
 | Simulator and formal-tool decision | Xcelium and Jasper Gold | Aashish, Arnav |
-| Xcelium check on `tb_noc_pkg` | Moved to 2026-10-15/16 | Arnav |
-| Toolchain versions in SYNC.md | 3/4 (Revanth missing) | Revanth |
+| Toolchain versions in SYNC.md | 3/4 (Arnav, Sachin, Aashish) | all |
+| input_fifo RTL + t_fifo unit verification | done (lint clean; seeds 1–5 passed, 55 checks each) | Revanth |
 
-Counters: RTL modules on main 0/10 (on branches: noc_pkg, input_fifo; local: rr_arbiter). SVA on main 0/40 (6 written on branch). Coverage n/a. Bugs logged 0 (rule: merged RTL only); 1 pre-merge finding, PM-001. Paper draft none.
+Counters: RTL modules 1/10. SVA 0/40 (40 planned in PLAN.md). Coverage n/a. Bugs logged 0. Paper draft none.
 
 ## Blockers
 1. PM-001 blocks Gate 1 (Revanth).

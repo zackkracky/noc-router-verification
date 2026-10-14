@@ -1,3 +1,3 @@
 # Compile order: packages, interfaces, RTL, then testbench.
-# Add each new source file here when its PR lands.
+# Shared CI smoke-test sources.
 tb/tests/t_smoke.sv
