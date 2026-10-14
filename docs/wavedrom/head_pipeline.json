@@ -1,0 +1,81 @@
+{
+  "signal": [
+    {
+      "name": "clk",
+      "wave": "PPPPPPPP",
+      "phase": 0
+    },
+    {
+      "name": "cycle Ck",
+      "wave": "========",
+      "data": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7"
+      ]
+    },
+    {
+      "name": "in_flit_valid",
+      "wave": "10......"
+    },
+    {
+      "name": "in_flit",
+      "wave": "=xxxxxxx",
+      "data": [
+        "HEAD"
+      ]
+    },
+    {
+      "name": "input VC state",
+      "wave": "=.===...",
+      "data": [
+        "IDLE",
+        "ROUTING",
+        "WAIT_VC",
+        "ACTIVE"
+      ]
+    },
+    {
+      "name": "FIFO head valid",
+      "wave": "01...0.."
+    },
+    {
+      "name": "va_req / va_grant",
+      "wave": "0..10..."
+    },
+    {
+      "name": "sa_req / final grant",
+      "wave": "0...10.."
+    },
+    {
+      "name": "out_flit_valid",
+      "wave": "0....10."
+    },
+    {
+      "name": "out_flit",
+      "wave": "xxxxx=xx",
+      "data": [
+        "HEAD"
+      ]
+    },
+    {
+      "name": "upstream credit_valid",
+      "wave": "0....10."
+    }
+  ],
+  "head": {
+    "text": "Uncontended HEAD: input FIFO to registered output",
+    "tick": 0
+  },
+  "foot": {
+    "text": "HEAD accepted E0; route E2; VA E3; reserve/dequeue E4; downstream accepts E5."
+  },
+  "config": {
+    "hscale": 3
+  }
+}
