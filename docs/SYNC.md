@@ -84,3 +84,20 @@ Blocked:
 
 Decisions:
 - Bounded liveness properties use `##[0:N]` in simulation and `s_eventually` under `ifdef FORMAL`.
+
+## 2026-10-14 (async, Revanth)
+
+Done:
+- Verified `input_fifo` lint is clean and `t_fifo` passes seeds 1–5 with 55 checks per seed.
+- Added the input FIFO lint and simulation checks to `.github/workflows/ci.yml`.
+- Fixed the Makefile waveform plusarg to match the testbench's `vcd` argument.
+- Added FIFO waveform screenshot evidence at `tb/tests/waves/output1_fifo.png`.
+
+Planned:
+- Open a PR for the input FIFO verification updates and check the GitHub Actions result.
+
+Blocked:
+- Gate 1 remains in progress pending the separate FIFO SVA and testbench-harness requirements.
+
+Decisions:
+- Commit waveform screenshot evidence as PNG; do not include generated simulation build artifacts or the VCD dump

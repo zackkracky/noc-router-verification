@@ -1,6 +1,6 @@
 # STATE
 
-Updated: 2026-10-02 (Aashish). Single snapshot; history lives in SYNC.md.
+Updated: 2026-10-14 (Revanth). Single snapshot; history lives in SYNC.md.
 
 ## Phase
 Phase 1a: Block RTL and Unit Verification (1 Oct to 3 Nov 2026).
@@ -25,8 +25,9 @@ Phase 1a: Block RTL and Unit Verification (1 Oct to 3 Nov 2026).
 | Verilator T4 probe (`##[0:N]`) | done (passed) | Aashish |
 | Simulator and formal-tool decision | Xcelium and Jasper Gold | Aashish, Arnav |
 | Toolchain versions in SYNC.md | 3/4 (Arnav, Sachin, Aashish) | all |
+| input_fifo RTL + t_fifo unit verification | done (lint clean; seeds 1–5 passed, 55 checks each) | Revanth |
 
-Counters: RTL modules 0/10. SVA 0/40 (40 planned in PLAN.md). Coverage n/a. Bugs logged 0. Paper draft none.
+Counters: RTL modules 1/10. SVA 0/40 (40 planned in PLAN.md). Coverage n/a. Bugs logged 0. Paper draft none.
 
 ## Blockers
 1. Semester 5 exam dates (mid-sem 2 and end-sem) unknown; Arnav pulling from timetable to evaluate Phase 1b schedule.
