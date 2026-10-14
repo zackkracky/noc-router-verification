@@ -85,6 +85,22 @@ Blocked:
 Decisions:
 - Bounded liveness properties use `##[0:N]` in simulation and `s_eventually` under `ifdef FORMAL`.
 
+## 2026-10-14 (async, Sachin)
+
+Done:
+- Updated the Makefile on the PR #11 branch with Battu's revised targets, strict Verilator lint, standalone RTL lint, and optional GTKWave layout loading.
+- Confirmed `make help` works and `git diff --check` reports no whitespace errors.
+- After bringing in main's smoke test, make lint TEST=t_smoke and make sim TEST=t_smoke SEED=1 passed.
+- Coordinated FIFO credit timing and assertion integration with Revanth and Aashish.
+
+Planned:
+- Continue the FIFO testbench timing update and driver/monitor work on the Phase 1a branch.
+
+Blocked:
+- Assertion-enabled P01–P06 integration awaits the legal-traffic run against Revanth's pushed combinational credit fix (ca65a74).
+
+Decisions:
+- Keep intentional full/empty rejection requests separate from the assertion-enabled legal-traffic run.
 ## 2026-10-14 (async, Arnav)
 
 Done:
