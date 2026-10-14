@@ -6,7 +6,7 @@ This contract covers the five-port wormhole router, its links, internal front/ba
 
 ## 0. Authority and decisions requiring sign-off
 
-+Reviewed sources: Project Bible rev 1 (18 September 2026), the original draft (`arnav/phase1-intial-interface` at `aff5816`), and repository `main` at `a20afb5` (14 October 2026). On that `main`, `rtl/pkg/noc_pkg.sv` and its check `tb/tests/tb_noc_pkg.sv` are merged (PR #9) and implement sections 1-2. The FIFO (`revu/input-fifo`) and `tb/env/flit_if.sv` (`sachin/phase1a-fifo-testbench`) exist on branches, not on `main`. No router RTL exists yet.
+Reviewed sources: Project Bible rev 1 (18 September 2026), the original draft (`arnav/phase1-intial-interface` at `aff5816`), and repository `main` at `a20afb5` (14 October 2026). On that `main`, `rtl/pkg/noc_pkg.sv` and its check `tb/tests/tb_noc_pkg.sv` are merged (PR #14) and implement sections 1-2. The FIFO (`revu/input-fifo`) and `tb/env/flit_if.sv` (`sachin/phase1a-fifo-testbench`) exist on branches, not on `main`. No router RTL exists yet.
 
 The bible says section 5 governs signals until `spec-v1` is tagged. This revision resolves its open decisions explicitly rather than treating the unmerged draft as an approved replacement. Once approved, this document governs behavior; `noc_pkg` implements the agreed constants and types. A disagreement is a defect to resolve in the same PR, not permission for either file to silently override the other.
 
@@ -21,11 +21,11 @@ The bible says section 5 governs signals until `spec-v1` is tagged. This revisio
 | T11 future routing | Reserve full per-output/per-VC credit counts as route-unit input; XY ignores it, future WF may use it | Revanth, Arnav, Sachin |
 | Scoreboard identity | Globally unique outstanding `pkt_id` within this single-router testbench (maximum 256); release ID at observed completion | Sachin, Aashish |
 
-Sign-off (name / date / reviewed commit):
-- Revanth — front RTL: Revanth/ 2026-10-13 / 93e5772
-- Arnav — back RTL and shared package: Arnav / 2026-10-08 / 93e5772
-- Sachin — testbench/interface: Sachin / 2026-10-10 / 93e5772
-- Aashish — assertions/scoreboard: Aashish / 2026-10-08 / 93e5772
+Sign-off (name / date / reviewed commit). Each reviewer fills in their own line after reading the final PR head; all four lines must name the same commit. Any later edit to this file invalidates the sign-offs.
+- Revanth — front RTL: pending
+- Arnav — back RTL and shared package: pending
+- Sachin — testbench/interface: pending
+- Aashish — assertions/scoreboard: pending
 
 Merge this PR only after all four reviewers sign the decision table above. Keep the merge untagged. Tag `spec-v1` only after `noc_pkg.sv`, the front RTL, and the back RTL agree with this contract and the interface acceptance checks pass. Later incompatible changes require all-four review and a new version. This PR does not create a Git tag or assert approval.
 
@@ -43,7 +43,7 @@ Merge this PR only after all four reviewers sign the decision table above. Keep 
 
 Derive `VC_W` and `CNT_W` **in each parameterized scope** with the package helpers: `localparam int unsigned VC_W = vc_w(NUM_VCS);` and `localparam int unsigned CNT_W = cnt_w(BUFFER_DEPTH);`. `vc_w(n)` returns `$clog2(n)` with a floor of 1; `cnt_w(d)` returns `$clog2(d+1)`. Do not repeat the raw `$clog2` expressions in modules. `VC_W` is 1 for two VCs, 2 for three/four; encoding 3 is illegal when `NUM_VCS=3`. `CNT_W` is 2, 3, 4 for depths 2, 4, 8. Payload width is `FLIT_WIDTH-HDR_W` (2, 34, 98 at widths 32, 64, 128).
 
-`noc_pkg` supplies enums `port_e` (`N=0,E=1,S=2,W=3,L=4`), `ftype_e` (`HEAD=0,BODY=1,TAIL=2,HEAD_TAIL=3`), and `vc_state_e` (`IDLE,ROUTING,WAIT_VC,ACTIVE`), defaults and the fixed-width `hdr_t`. A package-level width-specific `flit_t` must not silently force overridden modules back to 64 bits: declare `logic [FLIT_WIDTH-1:0]` locally. The included package deliberately defines only the fixed-width header type.
+`noc_pkg` supplies enums `port_e` (`N=0,E=1,S=2,W=3,L=4`), `ftype_e` (`HEAD=0,BODY=1,TAIL=2,HEAD_TAIL=3`), and `vc_state_e` (`IDLE,ROUTING,WAIT_VC,ACTIVE`), defaults and the fixed-width `hdr_t`. A package-level width-specific `flit_t` must not silently force overridden modules back to 64 bits: declare `logic [FLIT_WIDTH-1:0]` locally. `noc_pkg` deliberately defines only the fixed-width header type.
 
 ## 2. Flit layout and packet grammar
 
@@ -98,7 +98,7 @@ East increases X; North increases Y. Direct comparisons avoid unsigned-subtracti
 | `route_credit` | in | `[NUM_PORTS-1:0][NUM_VCS-1:0][CNT_W-1:0]` | Registered current downstream credit counts from back half |
 | `out_port_onehot` | out | `[NUM_PORTS-1:0]` | Exactly one bit for valid XY coordinates |
 
-**Lint decision (Arnav, 14 October 2026):** `route_credit` and `in_port` are always-present ports. their shape does not depend on `ROUTE_ALGO`. XY reads neither, so `route_unit` wraps those two port declarations only:
+**Lint decision (Arnav, 14 October 2026):** `route_credit` and `in_port` are always-present ports; their shape does not depend on `ROUTE_ALGO`. XY reads neither, so `route_unit` wraps those two port declarations only:
 
 ```systemverilog
 /* verilator lint_off UNUSEDSIGNAL */  // XY ignores; reserved for WF (T11)
@@ -106,15 +106,17 @@ input  logic [PORT_W-1:0]                             in_port,
 input  logic [NUM_PORTS-1:0][NUM_VCS-1:0][CNT_W-1:0]  route_credit,
 /* verilator lint_on UNUSEDSIGNAL */
 ```
+
 No other `UNUSED` waiver is permitted, and `UNUSED` stays enabled for the rest of the design. The WF implementation removes this waiver in the same PR. A generate-gated port was rejected: SystemVerilog cannot make a port conditional on a parameter, and a parameter-dependent port list would change every instantiation when WF is added.
- 
+
 Compare coordinates against `COORD_W`-sized localparams (`localparam logic [COORD_W-1:0] XC = COORD_W'(X_COORD);`) to avoid 32-bit width expansion. At the edges of the coordinate range one compare is constant: `dst_x < XC` at coordinate 0 (`UNSIGNED`) and `dst_x > XC` at coordinate 7 (`CMPCONST`). Guard them (`X_COORD > 0 && dst_x < XC`, `X_COORD < 7 && dst_x > XC`, same for Y) rather than waive; this is lint-clean at corners 0 and 7. `ROUTE_ALGO` is checked at elaboration: `if (ROUTE_ALGO != "XY") $error(...)` in a generate block.
- 
+
 The `route_credit` input is a **proposed T11 resolution**; it is not in the old draft. It carries counts, not only availability bits, so future WF can genuinely prefer an output with more capacity. XY ignores it. A future WF implementation must document its selection metric/tie-break and mesh proof; reserving the input does not implement WF or prove deadlock freedom. Unsupported algorithms must fail configuration validation rather than silently run XY. Sample/freeze a packet's chosen route before VA; never reroute its BODY/TAIL as credits change.
- 
+
 If one route unit is shared by all VCs in an input port, `input_port` arbitrates routing work and commits at most one route result per cycle; unselected VCs remain waiting. The nominal timing below assumes that resource is available.
- 
+
 Do not assert “L never routes to L”: local destination returns L even on local input. The planned 20-pair test deliberately excludes same-port traffic; that is a traffic-profile restriction, not behavior implemented by the XY function. Likewise, no-U-turn checks require mesh-legal injection/history assumptions. N/S→E/W can be driven in single-router tests although they are unreachable in legal XY mesh transit. XY mesh deadlock freedom comes from dimension ordering and absence of cyclic channel dependencies, not merely from forbidding U-turns.
+
 ## 4. External link and router-top naming
 
 One `flit_if` instance represents **one unidirectional data channel plus its reverse credits**. Two opposite data directions need two instances. A five-port router's isolated testbench normally has five input-link instances and five output-link instances, including Local.
@@ -214,6 +216,8 @@ One synchronous FWFT FIFO per input VC: `DEPTH=BUFFER_DEPTH`, `WIDTH=FLIT_WIDTH`
 
 `enq = wr_valid && !full`, `deq = rd_ready && rd_valid` (both suppressed during reset). Counter next is count + enq − deq. Writes presented at full and reads requested at empty violate this candidate's protocol even if a simultaneous opposite request exists. The guards below still prevent pointer/count corruption.
 
+`rd_ready` is a pop strobe, not a ready-to-accept signal: the consumer drives it only when it intends to dequeue and only while `rd_valid` is high (in the router, `rd_ready = sa_grant[p][v]`, and `sa_req` already requires non-empty). Because `deq` is guarded by `rd_valid`, a property on `deq` would hold vacuously. P01 and P02 therefore check the request inputs: P01 `!(wr_valid && full)`, P02 `!(rd_ready && empty)`, each sampled at `posedge clk` and disabled while `!rst_n`. Directed FIFO tests that deliberately drive the illegal rows of the table below must run with P01/P02 disabled or expect their failure.
+
 | Pre-edge occupancy | wr_valid | rd_ready | Result at edge | Protocol status |
 |---|---:|---:|---|---|
 | Empty | 0 | 0 | No change | Legal |
@@ -233,7 +237,6 @@ All FIFO storage need not reset; pointers/count must reset so no stale entry is 
 
 The original draft relabelled P04–P06 incorrectly. Pending a complete approved PLAN.md, preserve the bible's Gate-1 mapping: P01 no write while full, P02 no read while empty, P03 count range, P04 write-only increment, P05 read-only decrement, P06 credit iff dequeue. FWFT stability and reset checks are additional requirements; Aashish assigns their IDs. The inspected PLAN.md stops inside a template and does not contain the claimed 40-row register.
 
-
 ## 7. Front/back boundary and arbitration
 
 Dimensions below are **per indexed element**, not the whole array width. Use leading packed dimensions `[NUM_PORTS-1:0][NUM_VCS-1:0]` for `[p][v]`, `[NUM_PORTS-1:0][NUM_VCS-1:0]` for `[o][v]`. Encoded ports use PORT_W bits. Only `route_unit` produces a one-hot route; `input_port` converts it to an encoded port for the boundary.
@@ -251,7 +254,7 @@ Dimensions below are **per indexed element**, not the whole array width. Use lea
 | `sa_flit[p][v]` | FLIT_WIDTH | input_port → back half | FIFO head |
 | `sa_grant[p][v]` | 1 | switch_allocator → input_port | Final grant; dequeue at this edge |
 | `ocredit_avail[o][v]` | 1 | output_unit → input_port | Current credit > 0 |
-| `ocredit_count[o][v]` | CNT_W | output_unit → route_unit | Route-credit input; ignored by XY |
+| `ocredit_count[o][v]` | CNT_W | output_unit → route_unit | Drives `route_unit.route_credit`; ignored by XY |
 | `ovc_free[o][v]` | 1 | vc_allocator → debug/optional front view | Inverse of busy; not a duplicate ownership table |
 | `xbar_sel[o][p]` | 1 | switch_allocator → crossbar | One-hot-or-zero input selection per output |
 | `xb_flit[p]` | FLIT_WIDTH | granted-VC mux → crossbar | Selected `sa_flit[p][v]` |
@@ -287,7 +290,7 @@ All state updates use `always_ff @(posedge clk)` and `if (!rst_n)` first. After 
 
 Reset mid-packet flushes FIFO contents, pending flits, delayed credits, packet-open state and scoreboard expectations. Such flushed packets are abandoned, not counted as loss. Drive reset away from the active edge; hold it low over at least two rising edges in TB. Ignore transfers while reset is sampled low.
 
-`tb/env/flit_if.sv` bundles the five link signals with `clk,rst_n`, parameterized by FLIT_WIDTH and NUM_VCS. It deliberately owns no FIFO, credit counter, packet generator, or protocol assertions.
+`tb/env/flit_if.sv` (on `sachin/phase1a-fifo-testbench`, not yet on `main`) bundles the five link signals with `clk,rst_n`, parameterized by FLIT_WIDTH and NUM_VCS. It deliberately owns no FIFO, credit counter, packet generator, or protocol assertions.
 
 | View | Reads | Drives |
 |---|---|---|
@@ -298,7 +301,7 @@ Reset mid-packet flushes FIFO contents, pending flits, delayed credits, packet-o
 | `rx_cb` clocking block | reset, forward flits | Credits |
 | `mon_cb` clocking block | All sampled signals | Nothing |
 
-All clocking blocks sample inputs `#1step` before the rising edge; driving blocks use `output #0` after it. A value written through `cb` at Ek is intended for acceptance at E(k+1), not Ek. Use either a raw RTL driver or clocking-block TB driver per signal, never both. Phase-1 module/task drivers may access a statically instantiated interface; do not claim a class constructor avoids virtual-interface requirements. Probe the exact simulator/version before adopting a virtual-interface class driver. The supplied test includes a clocking-block probe.
+All clocking blocks sample inputs `#1step` before the rising edge; driving blocks use `output #0` after it. A value written through `cb` at Ek is intended for acceptance at E(k+1), not Ek. Use either a raw RTL driver or clocking-block TB driver per signal, never both. Phase-1 module/task drivers may access a statically instantiated interface; do not claim a class constructor avoids virtual-interface requirements. Probe the exact simulator/version before adopting a virtual-interface class driver. `tb/tests/t_flit_if.sv` on the same branch includes a clocking-block probe.
 
 ## 9. Scoreboard and coverage contract
 
@@ -308,7 +311,7 @@ For this single-router profile, generator allocates `pkt_id` globally across all
 
 On output HEAD/HEAD_TAIL, use pkt_id to select its expectation and open tracking at `(output_port,output_vc)`. Check route, full flit bits, flit_idx order and length. BODY/TAIL match that open packet. TAIL closes it; HEAD_TAIL opens/closes atomically. Packet order is preserved per input VC and within a packet, not globally across all inputs/VCs. At successful drain, every expected queue is empty. Reset clears expectations and IDs.
 
-Credit coverage must distinguish **issue** from registered **flit_valid**: issue with pre-edge zero credit is illegal; a registered flit with zero remaining credit is legal. The depth-2 trace exercises it. Same-port/5-requester bins are excluded only under a stated non-U-turn traffic profile, not because the combinational route function rejects them. The 20 non-self port pairs include four router-only XY cases: N->E, N->W, S->E, S->W.
+Credit coverage must distinguish **issue** from registered **flit_valid**: issue with pre-edge zero credit is illegal; a registered flit with zero remaining credit is legal. The depth-2 trace exercises it. Same-port/5-requester bins are excluded only under a stated non-U-turn traffic profile, not because the combinational route function rejects them. The 20 non-self port pairs include four router-only XY cases: N→E, N→W, S→E, S→W.
 
 Liveness bounds require persistent eligibility and environmental progress (eventual tail, downstream credit return). A fixed bound such as 48 is a plan value, not a proof for every parameter/traffic choice. Aashish owns PLAN.md and the eventual properties; this document defines the events they should check.
 
@@ -316,9 +319,9 @@ Liveness bounds require persistent eligibility and environmental progress (event
 
 - All four resolve section 0 and review this document, package, interface and timing images together.
 - Package bit widths/layout match at FLIT_WIDTH 32/64/128 and NUM_VCS 2/3/4. Done: `tb_noc_pkg` checks header round-trip at 32/64/128, `vc_w` at NUM_VCS 1-4, `cnt_w` at depths 2/4/8 (`make sim TEST=tb_noc_pkg`, in CI).
-- Both RTL owners can identify every boundary producer/consumer; Arnav reviews proposed package and flat top names.
+- Both RTL owners can identify every boundary producer/consumer; Arnav reviews flat top names (package merged in PR #14).
 - Interface-only tests exercise both modport directions, all VC IDs, reset, stall/resume, simultaneous credit/send, and unchanged flit data; clocking-block probe passes on the chosen tool.
 - FIFO tests cover section 6's boundary table when Revanth's FIFO exists. Router tests confirm section 7 timing when router RTL exists.
 - Aashish reconciles actual PLAN.md contents and assertion sampling; do not copy old P23's zero-credit/output-valid check unchanged.
-- README and compile order include the new contract/interface/package. The Phase 0 `t_smoke` test now compiles and runs on main; add the interface and package sources to `filelist.f` when their implementation lands.
+- README and compile order include the new contract/interface/package. `noc_pkg.sv` is compiled first in each per-test filelist (`tb/tests/<test>.f`); add `flit_if.sv` when it lands on `main`.
 - Actual router/FIFO integration and Xcelium qualification remain separate from the included model/interface tests. Do not tag spec-v1 solely because this kit's example passes.
