@@ -13,3 +13,11 @@ jobs:
         run: make lint TEST=t_smoke
       - name: Run smoke test
         run: make sim TEST=t_smoke SEED=1
+      - name: Lint and sim noc_pkg
+        run: |
+          make lint TEST=tb_noc_pkg
+          make sim TEST=tb_noc_pkg SEED=1
+      - name: Lint and sim input FIFO
+        run: |
+          make lint TEST=t_fifo FILELIST=filelist_fifo.f
+          make sim TEST=t_fifo FILELIST=filelist_fifo.f SEED=1

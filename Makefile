@@ -28,7 +28,7 @@ else
 WAVE := $(LOGDIR)/$(TEST)_s$(SEED).fst
 VL_TRACE := --trace-fst
 endif
-PLUS := +dumpfile=$(WAVE)
+PLUS := +vcd=$(WAVE)
 endif
 
 .PHONY: help check-sources lint lint-rtl build sim run waves regress cov formal clean
