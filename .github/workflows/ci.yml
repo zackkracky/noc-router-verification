@@ -4,7 +4,8 @@ on: [push, pull_request]
 
 jobs:
   lint-and-sim:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04            # apt Verilator 5.020, matches SETUP.md
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Install simulator
@@ -19,9 +20,5 @@ jobs:
           make sim TEST=tb_noc_pkg SEED=1
       - name: Lint and sim input FIFO
         run: |
-          make lint TEST=t_fifo FILELIST=filelist_fifo.f
-          make sim TEST=t_fifo FILELIST=filelist_fifo.f SEED=1
-        run:  |
-          make lint TEST=tb_noc_pkg
-          make sim  TEST=tb_noc_pkg SEED=1
-
+          make lint TEST=tb_fifo FILELIST=filelist_fifo.f
+          make sim TEST=tb_fifo FILELIST=filelist_fifo.f SEED=1
