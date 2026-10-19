@@ -17,11 +17,7 @@ module rr_arbiter #(
   logic [IDX_W-1:0] ptr_q;                          // highest-priority index
   logic [N-1:0]     mask, req_m, gnt_m, gnt_u;
 
-  always_comb begin
-    for (int unsigned i = 0; i < N; i++)
-      mask[i] = (i >= 32'(ptr_q));                  // thermometer: bits >= ptr
-  end
-
+  assign mask      = {N{1'b1}} << ptr_q;            // thermometer: ones at bits >= ptr; ptr >= N gives 0 -> wrap path, safe
   assign req_m     = req & mask;                    // requests at/after ptr
   assign gnt_m     = req_m & (-req_m);              // isolate lowest set bit
   assign gnt_u     = req & (-req);                  // wrap-around candidate

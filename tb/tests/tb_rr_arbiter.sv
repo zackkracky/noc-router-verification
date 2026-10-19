@@ -27,9 +27,9 @@ module rr_arbiter_chk #(
         .rst_n (rst_n),
         .req (req),
         .en (en),
-        .gnt (grant),
-        .gnt_idx (grant_idx),
-        .gnt_vld (grant_vld)
+        .grant (grant),
+        .grant_idx (grant_idx),
+        .grant_vld (grant_vld)
     );
 
     // ---------------- reference model, written independently of the RTL ----------------
@@ -185,6 +185,14 @@ endmodule
 module tb_rr_arbiter;
   logic clk = 1'b0;
   initial forever #5 clk = ~clk;                              // 100 MHz
+
+  string dumpfile;
+  initial begin                                               // waves only when make passes +dumpfile= (WAVES=1)
+    if ($value$plusargs("dumpfile=%s", dumpfile)) begin
+      $dumpfile(dumpfile);
+      $dumpvars(0, tb_rr_arbiter);
+    end
+  end
 
   logic d1, d2, d3, d4, d5, d8;
   int   e1, e2, e3, e4, e5, e8;

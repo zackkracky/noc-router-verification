@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module t_smoke;
+module tb_smoke;
     initial begin
         $display("TEST PASSED");
         $finish;

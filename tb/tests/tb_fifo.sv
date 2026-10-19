@@ -1,7 +1,7 @@
 
 `default_nettype none
 
-module t_fifo;
+module tb_fifo;
 
     localparam int unsigned WIDTH = 8;
     localparam int unsigned DEPTH = 4;
@@ -73,7 +73,7 @@ module t_fifo;
             vcd = "dump.vcd";
 
         $dumpfile(vcd);
-        $dumpvars(0, t_fifo);
+        $dumpvars(0, tb_fifo);
     end
 
     task automatic check(

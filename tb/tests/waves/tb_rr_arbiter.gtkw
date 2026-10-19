@@ -1,0 +1,24 @@
+[*] tb_rr_arbiter: N=5 instance (SA stage-2 width); binary radix for vectors
+[timestart] 0
+[size] 1600 900
+@28
+TOP.tb_rr_arbiter.u_n5.dut.clk
+TOP.tb_rr_arbiter.u_n5.dut.rst_n
+TOP.tb_rr_arbiter.u_n5.dut.en
+@22
+TOP.tb_rr_arbiter.u_n5.dut.req[4:0]
+@24
+TOP.tb_rr_arbiter.u_n5.dut.ptr_q[2:0]
+@22
+TOP.tb_rr_arbiter.u_n5.dut.mask[4:0]
+TOP.tb_rr_arbiter.u_n5.dut.req_m[4:0]
+TOP.tb_rr_arbiter.u_n5.dut.gnt_m[4:0]
+TOP.tb_rr_arbiter.u_n5.dut.gnt_u[4:0]
+TOP.tb_rr_arbiter.u_n5.dut.grant[4:0]
+@24
+TOP.tb_rr_arbiter.u_n5.dut.grant_idx[2:0]
+@28
+TOP.tb_rr_arbiter.u_n5.dut.grant_vld
+@24
+TOP.tb_rr_arbiter.u_n5.ref_ptr
+TOP.tb_rr_arbiter.u_n5.errs[31:0]

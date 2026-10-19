@@ -1,3 +1,3 @@
 # Compile order: packages, interfaces, RTL, then testbench.
-# Shared CI smoke-test sources.
-tb/tests/t_smoke.sv
+# Fallback only: every test ships tb/tests/<TEST>.f
+tb/tests/tb_smoke.sv
