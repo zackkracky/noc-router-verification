@@ -1,12 +1,21 @@
 # STATE
 
-Updated: 2026-10-14 (Revanth). Single snapshot; history lives in SYNC.md.
+Updated: 2026-10-20 (Arnav). Single snapshot; history lives in SYNC.md.
 
 ## Phase
-Phase 1a: Block RTL and Unit Verification (1 Oct to 3 Nov 2026).
+Phase 1a: Block RTL and Unit Verification (1 Oct to 2 Nov 2026). Exam blackout 3 Nov to 9 Dec 2026 (sem-5 end-sem 17 Nov to 9 Dec): no project work. Phase 1b starts 10 Dec; Phase 1 exit 31 Dec.
 
-## Next deadline
-2026-10-15, Phase 1a Gate 1. Status as of 2026-10-14:
+## Next deadlines
+| Date | Item | Owner |
+|---|---|---|
+| 2026-10-24 | Driver, monitor and `tb_fifo` harness (overdue from 15 Oct) | Sachin |
+| 2026-10-26 | First `xrun` check of every merged test on the lab machine | Arnav |
+| 2026-10-31 | Phase 1a close-out: `switch_allocator` and `router_top` skeleton; `input_port`, `vc_allocator` | Arnav, Revanth |
+| 2026-11-01 / 02 | `crossbar` / `output_unit`; scoreboard v1 | Arnav, Aashish |
+| 2026-12-10 | Phase 1b starts | all |
+| 2026-12-31 | Phase 1 exit | all |
+
+Gate 1 (due 2026-10-15) was not met. Status as last reported 2026-10-14:
 
 | Gate 1 item | Status | Owner |
 |---|---|---|
@@ -25,11 +34,11 @@ PM-001 (found 2026-10-14 by P06 with `bind_all`): `input_fifo.credit_out` is reg
 | Repo, branch protection, ruleset | done | Arnav |
 | .gitattributes, .gitignore, CODEOWNERS | done | Arnav |
 | README: roles, conventions, module list | done | Arnav |
-| Makefile: lint, sim | done (PR #6). Rework on `arnav/rtl-back-initial`: per-test filelists, `WAVES=1`, `make waves`, `SIM=xcelium`, `lint-rtl`; `regress`, `cov`, `formal` stubs removed until Phase 2 | Sachin (review), Arnav |
-| CI lint-and-sim | `t_smoke` on main; `tb_noc_pkg` lint and sim added on `arnav/rtl-back-initial` | Sachin, Arnav |
+| Makefile: lint, sim, check | done (PR #6). Per-test filelists, `WAVES=1` (passes `+dumpfile=`), `make waves` (loads `tb/tests/waves/<TEST>.gtkw`), `SIM=xcelium`, `lint-rtl`, `make check SEEDS="..."` (lint + sim of every `tb/tests/*.f`, `logs/summary.txt`). `regress`, `cov`, `formal` print "not yet: Phase 2". Changes for `check` and `+dumpfile=` are on `arnav/rtl-back-arbiter` | Sachin (review), Arnav |
+| CI lint-and-sim | `main` still has the old `ci.yml` (duplicate `run:` key, invalid workflow; README badge red). `arnav/rtl-back-arbiter` has the fix: runs `make check SEEDS="1 2 3"`, job summary from `logs/summary.txt`, failing seeds re-run with waves, `logs/` uploaded 14 days. Badge turns green after that merges | Sachin, Arnav |
 | INTERFACE.md spec-v1 (PR #11) | Not merged. Sign-offs recorded on four different commits (Arnav 432ab16, Aashish N/A, Sachin e578d2a, Revanth cc84961); all four must re-sign the final commit before merge | Sachin (all four sign off) |
 | `rtl/pkg/noc_pkg.sv` + `tb_noc_pkg` | Lint clean, sim passes, mutation-checked. PR from `arnav/rtl-back-initial` | Arnav |
-| `rtl/back/rr_arbiter.sv` | Written, no testbench yet | Arnav |
+| `rtl/back/rr_arbiter.sv` + `tb_rr_arbiter` | Unit-tested on `arnav/rtl-back-arbiter`: N = 1, 2, 3, 4, 5, 8; exhaustive pointer x request sweep against an independent reference model, en-hold, fairness, starvation bound N-1, reset, 5000 random cycles; 6 of 6 injected mutants killed; contract in INTERFACE.md s7.2. PR pending; branch CI red until the TB port names, end-of-file newlines and FIFO filelist renames are pushed | Arnav |
 | `rtl/front/input_fifo.sv` | On `revu/input-fifo`, PM-001 open | Revanth |
 | `tb/sva/fifo_sva.sv` P01-P06 + `bind_all.sv` | On `aashish/sva-fifo` | Aashish |
 | `tb/env/flit_if.sv` + `t_flit_if` | On `sachin/phase1a-fifo-testbench` | Sachin |
@@ -39,11 +48,12 @@ PM-001 (found 2026-10-14 by P06 with `bind_all`): `input_fifo.credit_out` is reg
 | Toolchain versions in SYNC.md | 3/4 (Arnav, Sachin, Aashish) | all |
 | input_fifo RTL + t_fifo unit verification | done (lint clean; seeds 1–5 passed, 55 checks each) | Revanth |
 
-Counters: RTL modules 1/10. SVA 0/40 (40 planned in PLAN.md). Coverage n/a. Bugs logged 0. Paper draft none.
+Counters: RTL modules 1/10 on main (`rr_arbiter` unit-tested on branch). Tests on main 2 (`t_smoke`, `tb_noc_pkg`); on branch +`tb_fifo`, `tb_rr_arbiter`. SVA 0/40 (40 planned in PLAN.md). Coverage n/a. Bugs logged 0. Paper draft none.
 
 ## Blockers
 1. PM-001 blocks Gate 1 (Revanth).
-2. Semester 5 exam dates (mid-sem 2 and end-sem) still unknown; needed to re-check Phase 1b.
+2. Semester 5 mid-sem 2 date and all semester 6 dates unknown; mid-sem 2 on or before 2 Nov would pull the blackout start forward.
+3. JasperGold seat confirmation on the lab machine; Xcelium and JasperGold logins requested 26 to 28 Oct, confirm by 5 Jan.
 
 ## Team
 | Name | Code | GitHub | Owns |

@@ -1,6 +1,6 @@
 # NoC router interface specification — spec-v1 candidate
 
-Owner: Sachin (V1). Revision: 14 October 2026. Status: **DRAFT — proposed decisions, not frozen or approved.**
+Owner: Sachin (V1). Revision: 20 October 2026 (adds s7.2 arbiter contract; 14 October 2026 base). Status: **DRAFT — proposed decisions, not frozen or approved.**
 
 This contract covers the five-port wormhole router, its links, internal front/back boundary, and testbench connections. It is a specification, not executable RTL. Use this filename, `docs/INTERFACE.md`; an additional `interface.spec` file would duplicate the source of truth.
 
@@ -284,6 +284,40 @@ IDLE → ROUTING → WAIT_VC → ACTIVE → IDLE on TAIL/HEAD_TAIL dequeue. Whil
 
 This is the proposed uncontended, available-route-resource schedule. Arbitration/credit waits extend it; it is not a fixed latency promise under contention. Buffered BODY/TAIL skip RC and VA, permitting one issued and accepted flit each cycle. See `wavedrom/head_pipeline.json` and `.png`.
 
+### 7.2 Round-robin arbiter (`rr_arbiter`)
+
+`rtl/back/rr_arbiter.sv`, owner Arnav, unit test `tb/tests/tb_rr_arbiter.sv`. One module serves every arbitration point in the router: switch-allocator stage 1 (one per input port, `N = NUM_VCS`), stage 2 (one per output port, `N = NUM_PORTS`), and the per-output-VC arbiters in `vc_allocator` (`N = NUM_PORTS*NUM_VCS` requesters, or as Revanth decomposes it). Eligibility filtering (credit available, VC busy) is done by the caller with an AND on `req`; the arbiter has no eligibility input.
+
+| Parameter | Default | Meaning |
+|---|---:|---|
+| `N` | 5 | requesters, N >= 1 |
+| `IDX_W` | `N > 1 ? $clog2(N) : 1` | width of `grant_idx`; do not override |
+
+| Port | Dir | Width | Meaning |
+|---|---|---:|---|
+| `clk`, `rst_n` | in | 1 | synchronous active-low reset, s8 |
+| `req` | in | N | request vector, any pattern |
+| `en` | in | 1 | the grant offered this cycle is consumed; rotate priority at this edge |
+| `grant` | out | N | one-hot or zero, combinational from `req` and the pointer |
+| `grant_idx` | out | IDX_W | binary index of the set bit; meaningful only when `grant_vld` |
+| `grant_vld` | out | 1 | `\|req` |
+
+Behaviour. Let `ptr` be the registered pointer (reset 0). Define `mask = {N{1'b1}} << ptr` (thermometer, bits at or above `ptr`), `req_m = req & mask`. The winner is the lowest set bit of `req_m` if any, else the lowest set bit of `req` (wrap). Equivalently, the winner is the requester `i` that minimises `(i - ptr) mod N`. The pointer updates at the rising edge only when `en && grant_vld`, to `winner + 1` (0 when `winner == N-1`); otherwise it holds. `grant` is combinational in the same cycle as `req`, so the caller sees its grant before the edge and the dequeue, debit and pointer update all happen at that edge (s5.2).
+
+Rules the callers must follow, restating s7:
+- Stage 1 drives `en = |sa_grant[p]` (final grant for that input port), not its own stage-1 pick. A stage-1 winner that loses stage 2 does not rotate the pointer.
+- Stage 2 drives `en = grant_vld` on its own arbiter: a stage-2 grant is always final.
+- Every arbiter is re-evaluated every cycle; there is no hold state. If `req` changes while `en = 0`, `grant` follows `req` with the same pointer.
+- `grant` is never asserted outside `req`: `(grant & ~req) == 0`.
+
+Guarantees, checked by `tb_rr_arbiter` and to be carried as SVA (P-ids assigned by Aashish in PLAN.md):
+- Safety: `$onehot0(grant)`; `grant_vld == |req`; `grant[grant_idx]` when `grant_vld`.
+- Fairness: with all N requesting and `en` high, each requester receives exactly one grant per N cycles.
+- Starvation bound: a request held high with `en` high is granted within N-1 other grants. Simulation form `req[i] && en |-> ##[0:N-1] grant[i]` under the assumption `req[i]` stays high; formal form `s_eventually grant[i]` under the same assumption. This bound is for one arbiter; the router-level bound in PLAN.md composes stage 1, stage 2 and credit return and is a separate number.
+- Reset: `ptr = 0` after reset, so with all requesting the first grant is requester 0.
+
+Unit test coverage on `main`: exhaustive (`ptr`, `req`) sweep for every `ptr` in 0..N-1 and every `req` in 0..2^N-1 against an independent reference model, en-hold, fairness, starvation bound (measured maximum wait equals N-1 at every N tested), reset, and 5000 random cycles with random resets, at N = 1, 2, 3, 4, 5, 8. N = 3 and 5 cover the non-power-of-two case where `IDX_W` has unused codes; N = 8 covers the full-width pointer wrap.
+
 ## 8. Reset and testbench interface
 
 All state updates use `always_ff @(posedge clk)` and `if (!rst_n)` first. After a reset edge: FIFOs empty; VC FSMs IDLE; allocator busy bits clear; output valid registers zero; return valid registers zero; all credit counters BUFFER_DEPTH. Testbench drivers and downstream models must obey reset too. Reset all endpoints of a link together: independently restarting one side with full credits while the other retains buffered data is outside this contract.
@@ -322,6 +356,7 @@ Liveness bounds require persistent eligibility and environmental progress (event
 - Both RTL owners can identify every boundary producer/consumer; Arnav reviews flat top names (package merged in PR #14).
 - Interface-only tests exercise both modport directions, all VC IDs, reset, stall/resume, simultaneous credit/send, and unchanged flit data; clocking-block probe passes on the chosen tool.
 - FIFO tests cover section 6's boundary table when Revanth's FIFO exists. Router tests confirm section 7 timing when router RTL exists.
+- `rr_arbiter` matches section 7.2 (done: `tb_rr_arbiter`, in CI). `switch_allocator` and `vc_allocator` instantiate it rather than carrying private arbiters, and drive `en` as section 7.2 states; the allocator tests check the stage-1 pointer does not move on a stage-2 loss.
 - Aashish reconciles actual PLAN.md contents and assertion sampling; do not copy old P23's zero-credit/output-valid check unchanged.
 - README and compile order include the new contract/interface/package. `noc_pkg.sv` is compiled first in each per-test filelist (`tb/tests/<test>.f`); add `flit_if.sv` when it lands on `main`.
 - Actual router/FIFO integration and Xcelium qualification remain separate from the included model/interface tests. Do not tag spec-v1 solely because this kit's example passes.

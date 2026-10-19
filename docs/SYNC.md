@@ -138,3 +138,24 @@ Decisions and notes for everyone:
 - Test prefix:ALWAYS USE tb_ NOT t_
 - `.gitignore` changed on `arnav/rtl-back-initial`
 - PR #11: all four sign-off lines must name the same final commit.
+
+## 2026-10-20 (async, Arnav)
+ 
+Done:
+- `rtl/back/rr_arbiter.sv`: N-way round-robin arbiter, thermometer mask from a pointer, sync active-low reset, combinational `grant`/`grant_idx`/`grant_vld`, pointer rotates only when `en && grant_vld`. Verilator `-Wall` clean at N = 1, 2, 3, 4, 5, 8, 20.
+- `tb/tests/tb_rr_arbiter.sv` + `.f`: exhaustive pointer x request sweep against an independent reference model, en-hold, fairness, starvation bound (measured max wait = N-1), reset, random with random resets; N = 1, 2, 3, 4, 5, 8 in one run; per-N result table. 6 of 6 injected mutants killed (no +1, ignore en, no wrap, stuck pointer, mask off by one, no reset).
+- Makefile and CI: `make check SEEDS="..."`, `WAVES=1` passes `+dumpfile=`; `ci.yml` duplicate `run:` key fixed, CI runs `make check SEEDS="1 2 3"` and uploads `logs/`.
+- README and INTERFACE.md s7.2 (arbiter contract) updated.
+Planned:
+- Push `arnav/rtl-back-arbiter`, open the PR.
+- 2026-10-26 first `xrun` check of `tb_noc_pkg` and `tb_rr_arbiter` on the lab machine.
+- `switch_allocator` and `router_top` skeleton by 2026-10-31; `crossbar` 2026-11-01; `output_unit` 2026-11-02.
+Blocked:
+- Semester 5 mid-sem 2 date and semester 6 dates.
+- JasperGold seat confirmation.
+Decisions and notes for everyone:
+- One arbiter everywhere: `switch_allocator` stages 1 and 2 and `vc_allocator` instantiate `rr_arbiter`; eligibility (credit, VC busy) is an AND on `req` in the caller. Stage 1 drives `en = |sa_grant[p]`, stage 2 drives `en = grant_vld` (INTERFACE.md s7.2). Revanth: confirm `vc_allocator` can use it.
+- `make check SEEDS="1 2 3"` is what CI runs; run it before marking a PR ready.
+- Waves: tests read `+dumpfile=` and dump only when given. Revanth: `t_fifo` becomes `tb_fifo` (module, `$dumpvars`, `tb/tests/tb_fifo.f` replacing `filelist_fifo.f`); `tb/tests/waves/output1_fifo.png` moves to `docs/figures/`.
+- Test names always `tb_`; the smoke test is `tb_smoke`.
+- Exam blackout 3 Nov to 9 Dec: nothing planned inside it; Phase 1b starts 10 Dec.

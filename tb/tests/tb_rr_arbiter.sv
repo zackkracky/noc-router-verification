@@ -29,7 +29,14 @@ module rr_arbiter_chk #(
         .en (en),
         .grant (grant),
         .grant_idx (grant_idx),
-        .grant_vld (grant_vld)
+        .gra
+        
+        
+        
+        
+        
+        
+        nt_vld (grant_vld)
     );
 
     // ---------------- reference model, written independently of the RTL ----------------
@@ -162,7 +169,7 @@ module rr_arbiter_chk #(
             end
         $display("N=%0d starvation: max wait %0d cycles (bound %0d)", N, max_wait, N - 1);
 
-        //6 random: random req, random en, occasional reset, model compared every cycle
+        //6         random: random req, random en, occasional reset, model compared every cycle
         for (int unsigned c = 0; c < 5000; c++) 
         begin
             @(negedge clk);
@@ -184,7 +191,39 @@ endmodule
 // ---------------------------------------------------------------------------
 module tb_rr_arbiter;
   logic clk = 1'b0;
-  initial forever #5 clk = ~clk;                              // 100 MHz
+  initial forever #5 clk = ~clk;// 100 MHz
+
+  logic d1, d2, d3, d4, d5, d8;
+  int   e1, e2, e3, e4, e5, e8;
+
+  rr_arbiter_chk #(.N(1), .SEED(1)) u_n1 (.clk(clk), .done(d1), .errs(e1));
+  rr_arbiter_chk #(.N(2), .SEED(2)) u_n2 (.clk(clk), .done(d2), .errs(e2));
+  rr_arbiter_chk #(.N(3), .SEED(3)) u_n3 (.clk(clk), .done(d3), .errs(e3)); //non-power-of-2: unused ptr code
+  rr_arbiter_chk #(.N(4), .SEED(4)) u_n4 (.clk(clk), .done(d4), .errs(e4));
+  rr_arbiter_chk #(.N(5), .SEED(5)) u_n5 (.clk(clk), .done(d5), .errs(e5)); //SA stage 2 width
+  rr_arbiter_chk #(.N(8), .SEED(8)) u_n8 (.clk(clk), .done(d8), .errs(e8)); //full 3-bit ptr, power-of-2
+
+  initial begin
+    wait (d1 && d2 && d3 && d4 && d5 && d8);
+    #10;
+    $finish;                                                  // verdict printed in final
+  end
+
+  final begin                                                 // runs on $finish, incl. watchdog
+    $display("==========================================");
+    $display(" N   done  errs  result");
+    $display(" 1   %b     %0d     %s", d1, e1, (d1 && e1 == 0) ? "PASS" : "FAIL");
+    $display(" 2   %b     %0d     %s", d2, e2, (d2 && e2 == 0) ? "PASS" : "FAIL");
+    $display(" 3   %b     %0d     %s", d3, e3, (d3 && e3 == 0) ? "PASS" : "FAIL");
+    $display(" 4   %b     %0d     %s", d4, e4, (d4 && e4 == 0) ? "PASS" : "FAIL");
+    $display(" 5   %b     %0d     %s", d5, e5, (d5 && e5 == 0) ? "PASS" : "FAIL");
+    $display(" 8   %b     %0d     %s", d8, e8, (d8 && e8 == 0) ? "PASS" : "FAIL");
+    $display("==========================================");
+    if (d1 && d2 && d3 && d4 && d5 && d8 && ((e1 + e2 + e3 + e4 + e5 + e8) == 0))
+      $display("TEST PASSED");
+    else
+      $display("TEST FAILED errs=%0d", e1 + e2 + e3 + e4 + e5 + e8);
+  end
 
   string dumpfile;
   initial begin                                               // waves only when make passes +dumpfile= (WAVES=1)
@@ -194,27 +233,9 @@ module tb_rr_arbiter;
     end
   end
 
-  logic d1, d2, d3, d4, d5, d8;
-  int   e1, e2, e3, e4, e5, e8;
-
-  rr_arbiter_chk #(.N(1), .SEED(1)) u_n1 (.clk(clk), .done(d1), .errs(e1));
-  rr_arbiter_chk #(.N(2), .SEED(2)) u_n2 (.clk(clk), .done(d2), .errs(e2));
-  rr_arbiter_chk #(.N(3), .SEED(3)) u_n3 (.clk(clk), .done(d3), .errs(e3)); // non-power-of-2: unused ptr code
-  rr_arbiter_chk #(.N(4), .SEED(4)) u_n4 (.clk(clk), .done(d4), .errs(e4));
-  rr_arbiter_chk #(.N(5), .SEED(5)) u_n5 (.clk(clk), .done(d5), .errs(e5)); // SA stage 2 width
-  rr_arbiter_chk #(.N(8), .SEED(8)) u_n8 (.clk(clk), .done(d8), .errs(e8)); // full 3-bit ptr, power-of-2
-
-  initial begin
-    wait (d1 && d2 && d3 && d4 && d5 && d8);
-    #10;
-    if ((e1 + e2 + e3 + e4 + e5 + e8) == 0) $display("TEST PASSED");
-    else                                     $display("TEST FAILED errs=%0d", e1 + e2 + e3 + e4 + e5 + e8);
-    $finish;
-  end
-
   initial begin                                               // watchdog
     #50ms;
-    $display("TEST FAILED timeout");
+    $display("watchdog timeout");
     $finish;
   end
 
