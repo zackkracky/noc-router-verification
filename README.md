@@ -94,7 +94,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | Module | File | Owner | Purpose | Status |
 |---|---|---|---|---|
 | `noc_pkg` | `rtl/pkg/noc_pkg.sv` | Arnav | constants, enums, `hdr_t`, width helpers | unit-tested (`tb_noc_pkg`, PR #14) |
-| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | unit-tested (`tb_fifo`, #11); PM-001 fixed before merge |
+| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | unit-tested (`tb_fifo`, PR #13); PM-001 fixed before merge |
 | `route_unit` | `rtl/front/route_unit.sv` | Revanth | combinational XY route compute, `out_port_onehot[4:0]`; `route_credit` input reserved for WF | planned |
 | `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, registered credit return, SA request | planned |
 | `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
@@ -106,7 +106,32 @@ One line per module. Updated in the same PR that lands or changes the module (in
 
 Status values: planned, skeleton, unit-tested, integrated. "unit-tested" means lint clean and passing on `main`.
 
-SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). On a branch: `tb/env/flit_if.sv` (`sachin/phase1a-fifo-testbench`).
+SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). Link components prepared on `sachin/phase1a-driver-monitor`: `flit_if`, `flit_pkt`, `flit_driver`, `flit_monitor`, `tb_flit_if` and `tb_fifo_link`.
+
+## Phase 1a link environment
+
+`flit_if`, `flit_pkt`, `flit_driver` and `flit_monitor` are in `tb/env/`.
+The driver accepts a command only when `cmd_valid && cmd_ready` at the rising
+edge. It reserves credit at that edge and registers the flit for acceptance
+one edge later. Hold command fields stable until admission. The monitor reads
+pre-edge link signals, checks VC bounds and per-VC packet framing, and emits a
+registered `observed` event. Reset flushes framing state and restores credits.
+These module-based components require no virtual interface.
+
+Run `make sim TEST=tb_fifo_link SEED=1 WAVES=1`. The harness connects the driver
+to real `input_fifo` instances, models one registered credit-return stage, and
+compares monitored arrivals with FIFO dequeues using independent per-VC queues.
+It tests 32/64/128-bit flits, 2/3/4 VCs and depth 2/4/8, seeded packets, full
+stalls, credit conservation, simultaneous same/different-VC events and reset
+mid-packet. The adapter is TB wiring, not production `input_port` RTL. The
+existing `tb_fifo` remains the standalone FIFO test.
+
+`tb_flit_if` preserves the simple raw-signal interface probe. Clocking blocks
+are opt-in with `+define+FLIT_IF_CLOCKING`: hierarchical clocking events are not
+supported by the tested Verilator 5.020 baseline. No clocking-block qualification
+or spec-v1 freeze is claimed. `make check SEEDS="1 2 3"` discovers both new tests.
+FIFO P01-P06 are merged in PR #17. Both `tb_fifo` and `tb_fifo_link` compile
+`fifo_sva.sv` and `bind_all.sv`; the current Makefile enables `--assert`.
 
 ## Coding conventions
 

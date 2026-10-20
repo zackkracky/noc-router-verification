@@ -1,0 +1,214 @@
+// fifo_link_case: TB-only multi-VC FIFO adapter and independent queue checks.
+`default_nettype none
+module fifo_link_case #(
+  parameter int unsigned F = 64, V = 2, D = 4,
+  localparam int unsigned VW = noc_pkg::vc_w(V), CW = noc_pkg::cnt_w(D)
+)(output bit done);
+  import noc_pkg::*;
+  typedef logic [F-1:0] flit_t;
+  logic clk = 0, rst_n = 0, cmd_valid = 0, drain = 0;
+  always #5 clk <= ~clk;
+  logic [F-1:0] cmd_flit = '0;
+  logic [VW-1:0] cmd_vc = '0;
+  logic cmd_ready, observed;
+  logic [F-1:0] observed_flit;
+  logic [VW-1:0] observed_vc;
+  int unsigned credits [V];
+  int unsigned drain_vc = 0;
+  logic [V-1:0] rd_valid, rd_ready, credit, full, empty;
+  logic [F-1:0] rd_data [V];
+  logic [CW-1:0] count [V];
+  logic popped;
+  flit_t popped_flit;
+  logic [VW-1:0] popped_vc;
+  bit admitted;
+  flit_t admitted_flit;
+  logic [VW-1:0] admitted_vc;
+  int unsigned same_vc = 0, different_vc = 0, last_credit = 0;
+  flit_if #(.FLIT_WIDTH(F), .NUM_VCS(V)) link(clk, rst_n);
+  flit_driver #(.FLIT_WIDTH(F), .NUM_VCS(V), .BUFFER_DEPTH(D)) driver(
+    .link(link), .cmd_valid, .cmd_flit, .cmd_vc, .cmd_ready, .credits);
+  flit_monitor #(.FLIT_WIDTH(F), .NUM_VCS(V)) monitor(
+    .link(link), .observed, .observed_flit, .observed_vc);
+
+  // Independently check command-to-link timing and data before FIFO acceptance.
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      admitted <= 0;
+      admitted_flit <= '0;
+      admitted_vc <= '0;
+    end else begin
+      if (link.flit_valid !== admitted ||
+          (admitted && {link.flit_vc, link.flit} !== {admitted_vc, admitted_flit}))
+        $fatal(1, "driver command-to-link mismatch");
+      admitted <= cmd_valid && cmd_ready;
+      admitted_flit <= cmd_flit;
+      admitted_vc <= cmd_vc;
+    end
+  end
+
+  for (genvar v = 0; v < V; v++) begin : g_fifo
+    input_fifo #(.WIDTH(F), .DEPTH(D)) u_fifo(
+      .clk, .rst_n, .wr_valid(rst_n && link.flit_valid && int'(link.flit_vc) == v),
+      .wr_data(link.flit), .rd_ready(rd_ready[v]), .rd_valid(rd_valid[v]),
+      .rd_data(rd_data[v]), .count(count[v]), .full(full[v]), .empty(empty[v]), .credit_out(credit[v]));
+    assign rd_ready[v] = rst_n && drain && drain_vc == v && rd_valid[v];
+  end
+
+  // Models input_port's single return register, not an extra FIFO register.
+  always @(posedge clk) begin
+    link.credit_valid <= 0;
+    link.credit_vc <= '0;
+    popped <= 0;
+    popped_flit <= '0;
+    popped_vc <= 0;
+    if (rst_n) begin
+      for (int unsigned v = 0; v < V; v++) begin
+        if (credit[v] !== rd_ready[v]) $fatal(1, "FIFO credit is not same-cycle dequeue");
+        if (rd_ready[v]) begin
+          popped <= 1;
+          popped_flit <= rd_data[v];
+          popped_vc <= VW'(v);
+          link.credit_valid <= 1;
+          link.credit_vc <= VW'(v);
+        end
+      end
+      if (cmd_valid && cmd_ready && link.credit_valid) begin
+        if (cmd_vc == link.credit_vc) same_vc <= same_vc + 1;
+        else different_vc <= different_vc + 1;
+      end
+      if (link.flit_valid && credits[link.flit_vc] == 0) last_credit <= last_credit + 1;
+    end
+  end
+
+  // A separate queue per generated VC avoids dynamic queue-array tool limitations.
+  for (genvar v = 0; v < V; v++) begin : g_check
+    flit_t expected[$];
+    // Queue operations must take effect immediately before comparing the head.
+    /* verilator lint_off BLKSEQ */
+    always @(negedge clk) begin : check_queue
+      flit_t wanted;
+      if (!rst_n) expected.delete();
+      else begin
+        if (observed && int'(observed_vc) == v) expected.push_back(observed_flit);
+        if (popped && int'(popped_vc) == v) begin
+          if (expected.size() == 0) $fatal(1, "unexpected FIFO output");
+          wanted = expected.pop_front();
+          if (popped_flit !== wanted) $fatal(1, "FIFO data corruption/reordering");
+        end
+        if (int'(count[v]) != expected.size() ||
+            empty[v] != (count[v] == 0) || full[v] != (int'(count[v]) == D))
+          $fatal(1, "FIFO occupancy mismatch");
+        if (credits[v] + int'(count[v]) +
+            int'(link.flit_valid && int'(link.flit_vc) == v) +
+            int'(link.credit_valid && int'(link.credit_vc) == v) != D)
+          $fatal(1, "credit conservation failure");
+      end
+    end
+    /* verilator lint_on BLKSEQ */
+  end
+
+  function automatic flit_t make_flit(input int unsigned id, idx, len);
+    flit_pkt #(F) pkt = new();
+    pkt.hdr.ftype = len == 1 ? HEAD_TAIL : idx == 0 ? HEAD : idx == len-1 ? TAIL : BODY;
+    pkt.hdr.pkt_id = PKT_ID_W'(id);
+    pkt.hdr.flit_idx = FLIT_IDX_W'(idx);
+    pkt.hdr.dst_x = 3'd3;
+    pkt.hdr.dst_y = 3'd4;
+    pkt.payload = (F-HDR_W)'({4{32'hA5C3_1234}} ^ (128'(id) * 128'(19) + 128'(idx)));
+    return pkt.pack();
+  endfunction
+
+  task automatic send(input int unsigned vc, id, idx, len);
+    int unsigned waited = 0;
+    if (vc >= (1 << VW)) $fatal(1, "test command VC cannot be encoded");
+    @(negedge clk);
+    cmd_vc = VW'(vc); cmd_flit = make_flit(id, idx, len); cmd_valid = 1;
+    do begin
+      @(posedge clk);
+      waited++;
+      if (waited > 200) $fatal(1, "driver admission timeout");
+    end while (!cmd_ready);
+    @(negedge clk); cmd_valid = 0;
+  endtask
+
+  task automatic reset_link;
+    @(negedge clk); rst_n = 0; cmd_valid = 0; drain = 0;
+    repeat (3) @(negedge clk);
+    for (int unsigned v = 0; v < V; v++)
+      if (credits[v] != D || count[v] != 0) $fatal(1, "reset state mismatch");
+    if (link.flit_valid || link.credit_valid) $fatal(1, "reset valid mismatch");
+    rst_n = 1;
+  endtask
+
+  task automatic drain_one(input int unsigned vc);
+    @(negedge clk); drain_vc = vc; drain = 1;
+    repeat (D+5) @(negedge clk);
+    drain = 0;
+    if (credits[vc] != D || count[vc] != 0) $fatal(1, "drain did not restore credits");
+  endtask
+
+  initial begin
+    done = 0;
+    reset_link();
+    if ($test$plusargs("bad_framing")) send(0, 1, 1, 3);
+    if ($test$plusargs("bad_vc") && V == 3) send(V, 1, 0, 1);
+    for (int unsigned v = 0; v < V; v++) begin
+      drain = 0;
+      for (int unsigned i = 0; i < D; i++) send(v, v, i, D+2);
+      repeat (3) @(negedge clk);
+      if (credits[v] != 0 || int'(count[v]) != D) $fatal(1, "FIFO never filled");
+      fork
+        begin
+          send(v, v, D, D+2);
+          send(v, v, D+1, D+2);
+        end
+        begin
+          repeat (3) @(negedge clk);
+          if (cmd_ready || link.flit_valid) $fatal(1, "zero-credit stall failed");
+          drain_vc = v; drain = 1;
+        end
+      join
+      drain_one(v);
+    end
+    // Interleave VC packets, with a return for VC0 while reserving VC1.
+    send(0, 32, 0, 2);
+    send(1, 33, 0, 2);
+    @(negedge clk); drain_vc = 0; drain = 1;
+    @(negedge clk);
+    cmd_vc = VW'(1); cmd_flit = make_flit(33, 1, 2); cmd_valid = 1;
+    @(negedge clk); cmd_valid = 0; drain = 0;
+    send(0, 32, 1, 2);
+    for (int unsigned v = 0; v < V; v++) drain_one(v);
+    // Seeded packets, VC choice and consumer delay exercise repeated wraparound.
+    for (int unsigned n = 0; n < 20; n++) begin
+      automatic int unsigned rv = $urandom_range(0, V-1);
+      automatic int unsigned len = $urandom_range(1, D+3);
+      automatic int unsigned delay_cycles = $urandom_range(1, D+3);
+      drain = 0;
+      fork
+        begin
+          for (int unsigned i = 0; i < len; i++) send(rv, 100+n, i, len);
+        end
+        begin
+          repeat (delay_cycles) @(negedge clk);
+          drain_vc = rv; drain = 1;
+        end
+      join
+      drain_one(rv);
+    end
+    // Reset flushes buffered HEADs, then each VC must accept a fresh packet.
+    send(0, 40, 0, 3);
+    reset_link();
+    for (int unsigned v = 0; v < V; v++) begin
+      send(v, 64+v, 0, 1);
+      drain_one(v);
+    end
+    if (same_vc == 0 || different_vc == 0 || last_credit == 0)
+      $fatal(1, "missing credit corner-case stimulus");
+    $display("F=%0d V=%0d D=%0d PASS: same=%0d different=%0d last=%0d",
+             F, V, D, same_vc, different_vc, last_credit);
+    done = 1;
+  end
+endmodule
+`default_nettype wire

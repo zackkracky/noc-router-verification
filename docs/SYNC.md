@@ -183,3 +183,35 @@ Decisions and notes for everyone:
 - Waves: tests read `+dumpfile=` and dump only when given. Revanth: `t_fifo` becomes `tb_fifo` (module, `$dumpvars`, `tb/tests/tb_fifo.f` replacing `filelist_fifo.f`); `tb/tests/waves/output1_fifo.png` moves to `docs/figures/`.
 - Test names always `tb_`; the smoke test is `tb_smoke`.
 - Exam blackout 3 Nov to 9 Dec: nothing planned inside it; Phase 1b starts 10 Dec.
+
+## 2026-10-21 (async, Sachin)
+
+Done:
+- Prepared `flit_if` using package width helpers, `flit_pkt`, a credit-aware
+  registered driver and passive framing monitor on top of merged PRs #16/#17
+  (`3ea9243`), preserving the assertion-enabled Makefile and FIFO unit test.
+- Added `tb_fifo_link` with real per-VC FIFOs, one registered return stage,
+  independent queues and parameter/seeded traffic checks; kept `tb_fifo` intact.
+- Added `tb_flit_if` and per-test filelists for automatic `make check` discovery.
+
+Planned:
+- Review the link environment, then connect it to `input_port` when available.
+- Keep the merged P01-P06 checkers bound in both FIFO test filelists.
+
+Blocked / limits:
+- Verilator 5.020 does not accept hierarchical clocking events; raw-interface
+  sampling is used. Clocking blocks remain opt-in for later tool qualification.
+- Xcelium is not available in this environment; lab qualification is pending.
+- P01-P06 are merged in PR #17; the new harness still needs review/merge.
+
+Earlier validation on PR #16 baseline (Verilator 5.020; before PR #17):
+- `make check SEEDS="1 2 3"`: 24/24 PASS, including six warning-free lint runs.
+- `tb_fifo_link` seed 7 with `WAVES=1`: PASS; FST created.
+- `+bad_framing` and `+bad_vc`: both failed with the intended diagnostic.
+- A temporary one-bit corruption of FIFO output was caught by the independent
+  queue comparison. This was a test mutation, not a bug in merged RTL.
+
+Validation on updated main `3ea9243` (Verilator 5.020):
+- `make check SEEDS="1 2 3"`: 24/24 PASS with `--assert`.
+- P01-P06 bound to the FIFO instances in both `tb_fifo` and `tb_fifo_link`.
+- `+bad_framing` and `+bad_vc` rejected with the intended framing/VC diagnostics.
