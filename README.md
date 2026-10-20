@@ -98,7 +98,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | `route_unit` | `rtl/front/route_unit.sv` | Revanth | combinational XY route compute, `out_port_onehot[4:0]`; `route_credit` input reserved for WF | planned |
 | `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, registered credit return, SA request | planned |
 | `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
-| `rr_arbiter` | `rtl/back/rr_arbiter.sv` | Arnav | masked-priority round-robin arbiter, one-hot grant | written locally, no testbench |
+| `rr_arbiter` | `rtl/back/rr_arbiter.sv` | Arnav | masked-priority round-robin arbiter, one-hot grant; one module for SA stage 1, SA stage 2 and VA (INTERFACE.md s7.2) | unit-tested (`tb_rr_arbiter`, #16) |
 | `switch_allocator` | `rtl/back/switch_allocator.sv` | Arnav | separable input-first SA, re-arbitrated every cycle | planned |
 | `crossbar` | `rtl/back/crossbar.sv` | Arnav | 5x5 flit mux selected by stage-2 grant | planned |
 | `output_unit` | `rtl/back/output_unit.sv` | Arnav | output register, per-VC credit counter (credits only, no ownership) | planned |

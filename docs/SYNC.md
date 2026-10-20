@@ -146,8 +146,9 @@ Done:
 - `tb/tests/tb_rr_arbiter.sv` + `.f`: exhaustive pointer x request sweep against an independent reference model, en-hold, fairness, starvation bound (measured max wait = N-1), reset, random with random resets; N = 1, 2, 3, 4, 5, 8 in one run; per-N result table. 5 of 5 non-equivalent injected mutants killed (no +1, ignore en, stuck pointer, mask off by one, no reset); the no-wrap mutant (`ptr_q <= grant_idx + 1` without the N-1 check) is equivalent at the ports, because `ptr = N` gives `mask = 0` and takes the same wrap path as `ptr = 0`. Only an internal property `ptr_q < N` distinguishes it.
 - Makefile and CI: `make check SEEDS="..."`, `WAVES=1` passes `+dumpfile=`; `ci.yml` duplicate `run:` key fixed, CI runs `make check SEEDS="1 2 3"` and uploads `logs/`.
 - README and INTERFACE.md s7.2 (arbiter contract) updated.
+- PR #16 merged 2026-10-21 (edce4cc). Follow-up: mutant count corrected to 5/5 non-equivalent + 1 equivalent; STATE stale rows corrected; CI actions moved to Node 24 majors (`checkout@v6`, `upload-artifact@v6`).
 Planned:
-- Push `arnav/rtl-back-arbiter`, open the PR.
+- Aashish rebases PR #17 onto `main` (only his three commits) and adds the SVA to `tb_fifo.f` with `--assert` so CI runs P01-P06.
 - 2026-10-26 first `xrun` check of `tb_noc_pkg` and `tb_rr_arbiter` on the lab machine.
 - `switch_allocator` and `router_top` skeleton by 2026-10-31; `crossbar` 2026-11-01; `output_unit` 2026-11-02.
 Blocked:
