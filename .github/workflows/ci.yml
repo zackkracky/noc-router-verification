@@ -1,27 +1,58 @@
 name: ci
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]          # PRs cover branches; avoids a duplicate run per push to an open PR
+  pull_request:
+  workflow_dispatch:          # manual run from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true    # a new push cancels the stale run on the same branch
 
 jobs:
-  lint-and-sim:
+  lint-and-sim:               # job id is the required status check in protect-main: do not rename
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Install simulator
-        run: sudo apt-get update && sudo apt-get install -y verilator
-      - name: Lint smoke sources
-        run: make lint TEST=t_smoke
-      - name: Run smoke test
-        run: make sim TEST=t_smoke SEED=1
-      - name: Lint and sim noc_pkg
-        run: |
-          make lint TEST=tb_noc_pkg
-          make sim TEST=tb_noc_pkg SEED=1
-      - name: Lint and sim input FIFO
-        run: |
-          make lint TEST=t_fifo FILELIST=filelist_fifo.f
-          make sim TEST=t_fifo FILELIST=filelist_fifo.f SEED=1
-        run:  |
-          make lint TEST=tb_noc_pkg
-          make sim  TEST=tb_noc_pkg SEED=1
 
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends verilator
+          verilator --version
+
+      - name: Lint and sim every test (make check)
+        run: make check SEEDS="1 2 3"
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo '### lint-and-sim'
+            echo '```'
+            cat logs/summary.txt 2>/dev/null || echo 'no summary: make check did not start'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Re-run failing seeds with waves
+        if: failure()
+        run: |
+          mkdir -p logs
+          grep -E 'seed=[0-9]+ +FAIL' logs/summary.txt > logs/fails.txt 2>/dev/null || true
+          while read -r t s _; do
+            make sim TEST="$t" SEED="${s#seed=}" WAVES=1 > /dev/null 2>&1 || true
+          done < logs/fails.txt
+
+      - name: Upload logs and waves
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-run${{ github.run_number }}-${{ github.run_attempt }}
+          path: logs/
+          retention-days: 14
+          if-no-files-found: warn

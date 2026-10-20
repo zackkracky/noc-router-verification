@@ -30,20 +30,22 @@ make lint TEST=tb_noc_pkg
 make sim  TEST=tb_noc_pkg SEED=1
 make sim  TEST=tb_noc_pkg SEED=1 WAVES=1   # dumps logs/tb_noc_pkg_s1.fst
 make waves TEST=tb_noc_pkg SEED=1          # opens it in GTKWave
+make check SEEDS="1 2 3"                   # every test, as CI runs it; logs/summary.txt
 make clean
 ```
 
-Every test prints `TEST PASSED`; `make sim` fails if the marker is missing. CI runs `t_smoke` and `tb_noc_pkg` on every push and PR.
+Every test prints `TEST PASSED`; `make sim` fails if the marker is missing. CI (`lint-and-sim`) runs `make check SEEDS="1 2 3"` on every PR and on push to `main`: every `tb/tests/*.f` is linted and simulated, the summary is on the run page, and `logs/` (plus waves for failing seeds) is downloadable as the run artifact for 14 days.
 
 ### Make targets
 
 | Target | Variables | Does |
 |---|---|---|
-| `lint` | `TEST=` | Verilator `-Wall --lint-only` on the test's filelist; warnings fatal |
+| `lint` | `TEST=` | Verilator `-Wall --lint-only` on the test's filelist; warnings fatal; log in `logs/<test>_lint_<sim>.log` |
 | `lint-rtl` | `FILE=rtl/back/rr_arbiter.sv` | one RTL file with `noc_pkg`, no testbench |
 | `build` | `TEST=` | compile only |
-| `sim` (alias `run`) | `TEST= SEED= WAVES=0/1 SIM=verilator/xcelium` | build and run, require `TEST PASSED`; log in `logs/<test>_s<seed>_<sim>.log` |
-| `waves` | `TEST= SEED=` | open the newest `.fst`/`.vcd` for that test and seed |
+| `sim` (alias `run`) | `TEST= SEED= WAVES=0/1 SIM=verilator/xcelium` | build and run, require `TEST PASSED`; logs in `logs/<test>_build_<sim>.log` and `logs/<test>_s<seed>_<sim>.log` |
+| `waves` | `TEST= SEED=` | open the newest `.fst`/`.vcd` for that test and seed, with `tb/tests/waves/<TEST>.gtkw` if present |
+| `check` | `SEEDS="1 2 3" TESTS= SIM=` | lint once and sim per seed for every `tb/tests/*.f` (or `TESTS=`); one line per result in `logs/summary.txt`; non-zero exit on any FAIL. CI runs exactly this |
 | `regress`, `cov`, `formal` | — | Phase 2 stubs |
 | `clean` | — | removes `obj_*`, `xcelium_*`, `logs/` |
 
@@ -92,7 +94,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | Module | File | Owner | Purpose | Status |
 |---|---|---|---|---|
 | `noc_pkg` | `rtl/pkg/noc_pkg.sv` | Arnav | constants, enums, `hdr_t`, width helpers | unit-tested (`tb_noc_pkg`, PR #14) |
-| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | skeleton on `revu/input-fifo`; PM-001 open |
+| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | unit-tested (`tb_fifo`, #11); PM-001 fixed before merge |
 | `route_unit` | `rtl/front/route_unit.sv` | Revanth | combinational XY route compute, `out_port_onehot[4:0]`; `route_credit` input reserved for WF | planned |
 | `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, registered credit return, SA request | planned |
 | `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
@@ -123,7 +125,7 @@ Checked by `make lint` (`-Wall`, zero warnings on RTL, warnings fatal; never `-W
 11. Non-blocking `<=` in `always_ff`, blocking `=` in `always_comb`. Never mixed.
 12. Shared types and encodings come from `noc_pkg`; no local redefinition of flit fields, port numbers or width helpers. Declare `flit_t` locally per module.
 13. Testbench files (`tb/`) may use classes, queues, `$display`, `initial`. RTL files (`rtl/`) may not.
-14. Tests are `tb_<name>.sv` with a matching `tb_<name>.f`, module name equals file name, and end with `$display("TEST PASSED")`. (`t_smoke` predates the rule and is renamed when CI is next touched.)
+14. Tests are `tb_<name>.sv` with a matching `tb_<name>.f`, module name equals file name, and end with `$display("TEST PASSED")`.
 
 Template:
 
