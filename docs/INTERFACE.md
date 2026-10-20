@@ -311,7 +311,7 @@ Rules the callers must follow, restating s7:
 - `grant` is never asserted outside `req`: `(grant & ~req) == 0`.
 
 Guarantees, checked by `tb_rr_arbiter` and to be carried as SVA (P-ids assigned by Aashish in PLAN.md):
-- Safety: `$onehot0(grant)`; `grant_vld == |req`; `grant[grant_idx]` when `grant_vld`.
+- Safety: `$onehot0(grant)`; `grant_vld == |req`; `grant[grant_idx]` when `grant_vld`. Internal: `ptr < N` at every edge; the no-wrap mutant (`ptr <= winner + 1` without the `N-1` check) is equivalent at the ports and only this property kills it.
 - Fairness: with all N requesting and `en` high, each requester receives exactly one grant per N cycles.
 - Starvation bound: a request held high with `en` high is granted within N-1 other grants. Simulation form `req[i] && en |-> ##[0:N-1] grant[i]` under the assumption `req[i]` stays high; formal form `s_eventually grant[i]` under the same assumption. This bound is for one arbiter; the router-level bound in PLAN.md composes stage 1, stage 2 and credit return and is a separate number.
 - Reset: `ptr = 0` after reset, so with all requesting the first grant is requester 0.

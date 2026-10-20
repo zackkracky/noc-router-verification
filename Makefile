@@ -16,7 +16,7 @@ XR_LIB := xcelium_$(TEST)
 FILELIST ?= $(firstword $(wildcard tb/tests/$(TEST).f) filelist.f)
 SRCS := $(shell sed -e 's/#.*//' -e '/^[[:space:]]*$$/d' $(FILELIST) 2>/dev/null)
 
-VL := verilator --timing --timescale 1ns/1ps --top-module $(TEST) -f $(FILELIST)
+VL := verilator --timing --assert --timescale 1ns/1ps --top-module $(TEST) -f $(FILELIST)
 XR := xrun -sv -timescale 1ns/1ps -top $(TEST) -f $(FILELIST) -svseed $(SEED) \
       -xmlibdirname $(XR_LIB) -nocopyright
 
@@ -28,8 +28,7 @@ else
 WAVE := $(LOGDIR)/$(TEST)_s$(SEED).fst
 VL_TRACE := --trace-fst
 endif
-# both plusarg names until every test reads +dumpfile= (t_fifo reads +vcd=)
-PLUS := +dumpfile=$(WAVE) +vcd=$(WAVE)
+PLUS := +dumpfile=$(WAVE)
 endif
 
 # make check: every tb/tests/*.f, lint once, sim per seed; summary in logs/summary.txt

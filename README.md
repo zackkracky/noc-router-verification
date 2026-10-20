@@ -60,7 +60,7 @@ Filelist resolution: `tb/tests/<TEST>.f` if it exists, else `filelist.f`; `FILEL
 | `rtl/back/` | output side: arbiter, switch allocator, crossbar, output units, `router_top` | Revanth |
 | `tb/env/` | `flit_if`, driver, monitor, scoreboard, generator, env | Aashish |
 | `tb/tests/` | one `tb_<name>.sv` plus `tb_<name>.f` per test; `waves/` holds a `.gtkw` per test | Aashish |
-| `tb/sva/` | `PLAN.md` (40 properties), one `<block>_sva.sv` per block, `bind_all.sv` | Sachin |
+| `tb/sva/` | `PLAN.md` (52 properties), one `<block>_sva.sv` per block, `bind_all.sv` (only place SVA attaches) | Sachin |
 | `scripts/` | `regress.sh`, `cov_merge.py` (Phase 2) | Arnav |
 | `docs/` | `INTERFACE.md`, `STATE.md`, `SYNC.md`, `BUG_LOG.md`, `wavedrom/` timing diagrams, `figures/` | Aashish |
 | `docs/wavedrom/` | `head_pipeline.json`, `credit_stall.json` and rendered PNGs; the timing reference for INTERFACE.md s5 | Aashish |
@@ -98,7 +98,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | `route_unit` | `rtl/front/route_unit.sv` | Revanth | combinational XY route compute, `out_port_onehot[4:0]`; `route_credit` input reserved for WF | planned |
 | `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, registered credit return, SA request | planned |
 | `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
-| `rr_arbiter` | `rtl/back/rr_arbiter.sv` | Arnav | masked-priority round-robin arbiter, one-hot grant | written locally, no testbench |
+| `rr_arbiter` | `rtl/back/rr_arbiter.sv` | Arnav | masked-priority round-robin arbiter, one-hot grant; one module for SA stage 1, SA stage 2 and VA (INTERFACE.md s7.2) | unit-tested (`tb_rr_arbiter`, #16) |
 | `switch_allocator` | `rtl/back/switch_allocator.sv` | Arnav | separable input-first SA, re-arbitrated every cycle | planned |
 | `crossbar` | `rtl/back/crossbar.sv` | Arnav | 5x5 flit mux selected by stage-2 grant | planned |
 | `output_unit` | `rtl/back/output_unit.sv` | Arnav | output register, per-VC credit counter (credits only, no ownership) | planned |
@@ -106,7 +106,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 
 Status values: planned, skeleton, unit-tested, integrated. "unit-tested" means lint clean and passing on `main`.
 
-Testbench components on branches: `tb/env/flit_if.sv` (`sachin/phase1a-fifo-testbench`), `tb/sva/fifo_sva.sv` P01-P06 and `bind_all.sv` (`aashish/sva-fifo`).
+SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). On a branch: `tb/env/flit_if.sv` (`sachin/phase1a-fifo-testbench`).
 
 ## Coding conventions
 
@@ -270,7 +270,7 @@ If a rule here disagrees with `docs/STATE.md` or the timeline, this section wins
 | `docs/STATE.md` | single snapshot: phase, next gate, open bugs, per-item status, counters | Arnav |
 | `docs/SYNC.md` | append-only weekly sync: done / planned / blocked / decisions per person | each member |
 | `docs/BUG_LOG.md` | counted bugs (merged RTL) and pre-merge findings: id, found by, symptom, root cause, fix, catching check | fix PR author |
-| `tb/sva/PLAN.md` | 40 named properties: 12 protocol, 18 safety, 10 liveness; group, owner, status; starvation bound N=48 | Aashish |
+| `tb/sva/PLAN.md` | 52 named properties (`P01`-`P06` FIFO, then owner-prefixed `V`, `S`, `R`, `A`); group, owner, status; starvation bound N=48 | Aashish |
 | `docs/wavedrom/` | head-flit pipeline and credit-stall timing, JSON and PNG | Sachin |
 
 ## Tools
