@@ -27,7 +27,7 @@ module rr_arbiter #(
   always_comb begin
     grant_idx = '0;
     for (int unsigned i = 0; i < N; i++)
-      if (grant[i]) grant_idx = IDX_W'(i);y
+      if (grant[i]) grant_idx = IDX_W'(i);
   end
 
   always_ff @(posedge clk) begin

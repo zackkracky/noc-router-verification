@@ -1,6 +1,6 @@
 // tb_rr_arbiter:self-checking TB for rr_arbiter; exhaustive (ptr x req) sweep, random vs reference model, fairness, starvation bound, en-hold, reset; N = 1,2,3,4,5,8
 `timescale 1ns/1ps
-/* verilator lint_off DECLFILENAME */  // two modules in one TB file by design
+/* verilator lint_off DECLFILENAME */
 
 // ---------------------------------------------------------------------------
 // rr_arbiter_chk: one DUT of width N plus its reference model and checks
@@ -29,14 +29,7 @@ module rr_arbiter_chk #(
         .en (en),
         .grant (grant),
         .grant_idx (grant_idx),
-        .gra
-        
-        
-        
-        
-        
-        
-        nt_vld (grant_vld)
+        .grant_vld (grant_vld)
     );
 
     // ---------------- reference model, written independently of the RTL ----------------
