@@ -139,6 +139,29 @@ Decisions and notes for everyone:
 - `.gitignore` changed on `arnav/rtl-back-initial`
 - PR #11: all four sign-off lines must name the same final commit.
 
+## 2026-10-19 (async, Aashish)
+
+Done:
+- Phase 1a Gate 1 verified: `fifo_sva.sv` (P01–P06 / V01–V06) bound via `bind_all.sv` and passing 100% on `input_fifo` (`t_fifo`) under `--assert` (55/55 checks passed, 0 failures).
+- Pre-merge RTL bug caught via assertion P06 (`a_p06_credit_iff_dequeue` credit timing mismatch); fixed by Revanth in commit `ca65a74`.
+- Reviewed and approved Revanth's PR #13 (`revu/input-fifo`) and Arnav's PR #15 (`README`).
+- Expanded `tb/sva/PLAN.md` to 52 properties (15 Aashish, 8 Sachin, 14 Revanth, 15 Arnav) per team instructions (G1), establishing 40 passing as the Phase 2 exit floor.
+- Documented bounded liveness environment assumptions (upstream `TAIL` progress, downstream $D_{MAX}$ credit return).
+- Updated `docs/STATE.md` and `docs/SYNC.md`.
+
+Planned:
+- Merge `tb/sva/PLAN.md` 52-property PR (G1).
+- Rebase and merge `aashish/sva-fifo` into `main` immediately once Arnav merges PR #13.
+- Begin Scoreboard v1 (`tb/env/scoreboard.sv`) with XY reference model `expected_port(dst_x, dst_y)` ahead of the 3 Nov exam blackout.
+- Confirm JasperGold lab access during the 26–28 Oct window.
+
+Blocked:
+- PR #13 squash-merge by Arnav needed to land `bind_all.sv` on `main`.
+
+Decisions:
+- Starvation bound fixed at $N = 48$ cycles (`##[0:N]`).
+- Master property taxonomy expanded to 52 properties with owner-prefixed A/R/S/V tags.
+
 ## 2026-10-20 (async, Arnav)
  
 Done:
