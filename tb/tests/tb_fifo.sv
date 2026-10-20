@@ -66,23 +66,28 @@ module tb_fifo;
         else $fatal(1, "FAIL: FIFO count exceeded DEPTH");
 
 
-    string vcd;
-
-    initial begin
-        if (!$value$plusargs("vcd=%s", vcd))
-            vcd = "dump.vcd";
-
-        $dumpfile(vcd);
-        $dumpvars(0, tb_fifo);
+    string dumpfile;
+    initial begin                                               // waves only when make passes +dumpfile= (WAVES=1)
+        if ($value$plusargs("dumpfile=%s", dumpfile)) begin
+            $dumpfile(dumpfile);
+            $dumpvars(0, tb_fifo);
+        end
     end
+
+    bit sva_only = 0;                                           // +sva_only: TB checks log instead of stopping, for SVA-only mutant runs
+    int tb_fails = 0;
+    initial sva_only = $test$plusargs("sva_only");
 
     task automatic check(
         input logic condition,
         input string message
     );
         checks++;
-        if (condition !== 1'b1)
-            $fatal(1, "FAIL: %s at time %0t", message, $time);
+        if (condition !== 1'b1) begin
+            if (!sva_only) $fatal(1, "FAIL: %s at time %0t", message, $time);
+            tb_fails++;                                         // sva_only: let the bound SVA decide
+            $display("TB-CHECK FAIL (sva_only): %s at time %0t", message, $time);
+        end
     endtask
 
     task automatic reset_fifo;
@@ -264,6 +269,7 @@ module tb_fifo;
         check(empty, "simultaneous test FIFO drained");
 
         $display("PASS: simultaneous read/write");
+        if (tb_fails != 0) $fatal(1, "FAIL: %0d TB checks failed (sva_only)", tb_fails);
         $display("TOTAL CHECKS PASSED: %0d", checks);
         $display("TEST PASSED");
 

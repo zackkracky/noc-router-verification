@@ -28,8 +28,7 @@ else
 WAVE := $(LOGDIR)/$(TEST)_s$(SEED).fst
 VL_TRACE := --trace-fst
 endif
-# both plusarg names until every test reads +dumpfile= (t_fifo reads +vcd=)
-PLUS := +dumpfile=$(WAVE) +vcd=$(WAVE)
+PLUS := +dumpfile=$(WAVE)
 endif
 
 # make check: every tb/tests/*.f, lint once, sim per seed; summary in logs/summary.txt
