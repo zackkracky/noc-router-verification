@@ -20,10 +20,10 @@ Gate 1 (due 2026-10-15) was not met. Status 2026-10-20:
 | Gate 1 item | Status | Owner |
 |---|---|---|
 | `input_fifo` passing `tb_fifo` seeds, lint clean | Seeds 1-5 passed on `revu/input-fifo` (14 Oct). DECLFILENAME cleared by the `tb_fifo` rename; `lint` is warnings-fatal; `make check` lint + seeds 1-3 pass (#16, edce4cc). PM-001 fixed on `main` (below) | Revanth |
-| FIFO SVA `P01` to `P06` bound and passing on `tb_fifo` | PR #17 (`aashish/sva-fifo`). 14 Oct, against the registered `credit_out`: P01-P05 pass, P06 fails on every seed (PM-001). Not yet re-run against `main` (PM-001 fixed) and not in CI | Aashish |
+| FIFO SVA `P01` to `P06` bound and passing on `tb_fifo` | Done (#17): bound via `bind_all.sv`, pass seeds 1-3 in `make check` and CI. P06 kills the registered-credit mutant (PM-001) | Aashish |
 | Driver and monitor on `flit_if`, `t_fifo` harness | `flit_if.sv` and link probe on `sachin/phase1a-fifo-testbench`. Driver, monitor and `tb_fifo` harness not pushed (hard date 24 Oct) | Sachin |
 
-Gate 1 is still not met: PM-001 is fixed on `main` (below), but the harness is not pushed and P01-P06 are not yet in CI (PR #17).
+Gate 1 is still not met: PM-001 is fixed on `main` and P01-P06 run in CI (#17), but the harness is not pushed.
 
 ## Fixed pre-merge finding
 PM-001 (found 2026-10-14 by P06 with `bind_all`): `input_fifo.credit_out` was registered (`credit_out <= do_read`). INTERFACE.md s5.3 and s6 require it combinational (`credit_out = deq`); `input_port` adds the single register, so the registered version made credit return take 2 cycles instead of 1. `t_fifo` encoded the same registered timing and passed. Fixed before merge: `main` (#11, 1fd956e) has `assign credit_out = rst_n && do_read;` with same-cycle credit checks in the unit test. Recorded in docs/BUG_LOG.md under pre-merge findings, status DONE (not counted: the defect never reached `main`).
@@ -40,20 +40,19 @@ PM-001 (found 2026-10-14 by P06 with `bind_all`): `input_fifo.credit_out` was re
 | `rtl/pkg/noc_pkg.sv` + `tb_noc_pkg` | On `main` (#14). Lint clean, sim passes, mutation-checked | Arnav |
 | `rtl/back/rr_arbiter.sv` + `tb_rr_arbiter` | On `main` (#16, edce4cc), `make check` 16/16 PASS. N = 1, 2, 3, 4, 5, 8; exhaustive pointer x request sweep against an independent reference model, en-hold, fairness, starvation bound N-1, reset, 5000 random cycles. 5 of 5 non-equivalent injected mutants killed (no +1, ignore en, stuck pointer, mask off by one, no reset); the no-wrap mutant (`ptr_q <= grant_idx + 1` without the N-1 check) is equivalent at the ports, because `ptr = N` gives `mask = 0` and takes the same wrap path as `ptr = 0`. Only an internal property `ptr_q < N` distinguishes it. Contract in INTERFACE.md s7.2 | Arnav |
 | `rtl/front/input_fifo.sv` + `tb_fifo` | On `main` (#11); PM-001 fixed; seeds 1-5 passed, 55 checks each (14 Oct). `tb_fifo` rename in #16; lint clean and seeds 1-3 pass under `make check` (CI run #125) | Revanth |
-| `tb/sva/fifo_sva.sv` P01-P06 + `bind_all.sv` | PR #17 (`aashish/sva-fifo`): based on pre-#14 `main`; carries commits already squashed into `main` and re-adds `t_fifo.sv` and `filelist_fifo.f` if merged as is. Rebase onto `main` (only the three Aashish commits), add the SVA to `tb/tests/tb_fifo.f` and `--assert` so CI runs them. Also carries PLAN.md v2 (52 properties, G1) | Aashish |
+| `tb/sva/fifo_sva.sv` P01-P06 + `bind_all.sv` | Bound in `tb/tests/tb_fifo.f`; Verilator builds with `--assert`, so `make check` and CI run them (#17). P01-P06 pass, seeds 1-3. SVA-only mutation run (TB checks non-fatal, 9 mutants): P06 kills registered `credit_out` (PM-001); P04 no-increment; P05 no-decrement; P01/P02 `full` at DEPTH-1. Survive: simultaneous read/write count change (no hold property), `rd_ptr`/`wr_ptr` stuck (data path, scoreboard), and two mutants equivalent under P01/P02 | Aashish |
 | `tb/env/flit_if.sv` + `t_flit_if` | On `sachin/phase1a-fifo-testbench` | Sachin |
-| tb/sva/PLAN.md | On `main`: conventions header only (21 lines), no property table. v2 with 52 properties (G1) in PR #17 | Aashish |
+| tb/sva/PLAN.md | v2, 52 properties (V01-V15 Aashish, S01-S08 Sachin, R01-R14 Revanth, A01-A15 Arnav), G1 (#17). FIFO P01-P06 in `fifo_sva.sv` are V01-V06 in PLAN.md | Aashish |
 | Verilator T4 probe (`##[0:N]`) | done (passed) | Aashish |
 | Simulator and formal-tool decision | Xcelium and Jasper Gold | Aashish, Arnav |
 | Toolchain versions in SYNC.md | 3/4 (Arnav, Sachin, Aashish) | all |
 
-Counters: RTL modules 2/10 on `main` (`input_fifo`, `rr_arbiter`; + `noc_pkg`). Tests on `main` 4 (`tb_smoke`, `tb_noc_pkg`, `tb_fifo`, `tb_rr_arbiter`). SVA 0 on `main`, 6 in PR #17, 52 planned (PLAN.md v2); 40 is the Phase 2 floor. Coverage n/a. Bugs logged 0. Paper draft none.
+Counters: RTL modules 2/10 on `main` (`input_fifo`, `rr_arbiter`; + `noc_pkg`). Tests on `main` 4 (`tb_smoke`, `tb_noc_pkg`, `tb_fifo`, `tb_rr_arbiter`). SVA 6/52 on `main`, run in CI (P01-P06 = V01-V06); 40 is the Phase 2 floor. Coverage n/a. Bugs logged 0. Paper draft none.
 
 ## Blockers
-1. Gate 1: harness (Sachin, 24 Oct) and P01-P06 in CI (Aashish, PR #17).
+1. Gate 1: harness (Sachin, 24 Oct).
 2. Semester 5 mid-sem 2 date and all semester 6 dates unknown; mid-sem 2 on or before 2 Nov would pull the blackout start forward.
 3. JasperGold seat confirmation on the lab machine; Xcelium and JasperGold logins requested 26 to 28 Oct, confirm by 5 Jan.
-4. PR #17 rebase onto `main` (Aashish): conflicts in Makefile, STATE, SYNC, `filelist.f`.
 
 ## Team
 | Name | Code | GitHub | Owns |
