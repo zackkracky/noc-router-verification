@@ -143,7 +143,7 @@ Decisions and notes for everyone:
  
 Done:
 - `rtl/back/rr_arbiter.sv`: N-way round-robin arbiter, thermometer mask from a pointer, sync active-low reset, combinational `grant`/`grant_idx`/`grant_vld`, pointer rotates only when `en && grant_vld`. Verilator `-Wall` clean at N = 1, 2, 3, 4, 5, 8, 20.
-- `tb/tests/tb_rr_arbiter.sv` + `.f`: exhaustive pointer x request sweep against an independent reference model, en-hold, fairness, starvation bound (measured max wait = N-1), reset, random with random resets; N = 1, 2, 3, 4, 5, 8 in one run; per-N result table. 6 of 6 injected mutants killed (no +1, ignore en, no wrap, stuck pointer, mask off by one, no reset).
+- `tb/tests/tb_rr_arbiter.sv` + `.f`: exhaustive pointer x request sweep against an independent reference model, en-hold, fairness, starvation bound (measured max wait = N-1), reset, random with random resets; N = 1, 2, 3, 4, 5, 8 in one run; per-N result table. 5 of 5 non-equivalent injected mutants killed (no +1, ignore en, stuck pointer, mask off by one, no reset); the no-wrap mutant (`ptr_q <= grant_idx + 1` without the N-1 check) is equivalent at the ports, because `ptr = N` gives `mask = 0` and takes the same wrap path as `ptr = 0`. Only an internal property `ptr_q < N` distinguishes it.
 - Makefile and CI: `make check SEEDS="..."`, `WAVES=1` passes `+dumpfile=`; `ci.yml` duplicate `run:` key fixed, CI runs `make check SEEDS="1 2 3"` and uploads `logs/`.
 - README and INTERFACE.md s7.2 (arbiter contract) updated.
 Planned:

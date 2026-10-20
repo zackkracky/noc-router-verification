@@ -94,7 +94,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | Module | File | Owner | Purpose | Status |
 |---|---|---|---|---|
 | `noc_pkg` | `rtl/pkg/noc_pkg.sv` | Arnav | constants, enums, `hdr_t`, width helpers | unit-tested (`tb_noc_pkg`, PR #14) |
-| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | skeleton on `revu/input-fifo`; PM-001 open |
+| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | unit-tested (`tb_fifo`, #11); PM-001 fixed before merge |
 | `route_unit` | `rtl/front/route_unit.sv` | Revanth | combinational XY route compute, `out_port_onehot[4:0]`; `route_credit` input reserved for WF | planned |
 | `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, registered credit return, SA request | planned |
 | `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
