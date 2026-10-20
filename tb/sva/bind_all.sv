@@ -1,17 +1,14 @@
-// Bind declarations for SVA checkers
+// bind_all: attaches every <block>_sva checker to its RTL module; the only place SVA meets RTL
 `default_nettype none
 
 bind input_fifo fifo_sva #(
-  .DEPTH(DEPTH),
-  .WIDTH(WIDTH)
+  .DEPTH (DEPTH)
 ) u_fifo_sva (
   .clk        (clk),
   .rst_n      (rst_n),
   .wr_valid   (wr_valid),
-  .wr_data    (wr_data),
   .rd_ready   (rd_ready),
   .rd_valid   (rd_valid),
-  .rd_data    (rd_data),
   .count      (count),
   .full       (full),
   .empty      (empty),

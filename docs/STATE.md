@@ -42,12 +42,12 @@ PM-001 (found 2026-10-14 by P06 with `bind_all`): `input_fifo.credit_out` was re
 | `rtl/front/input_fifo.sv` + `tb_fifo` | On `main` (#11); PM-001 fixed; seeds 1-5 passed, 55 checks each (14 Oct). `tb_fifo` rename in #16; lint clean and seeds 1-3 pass under `make check` (CI run #125) | Revanth |
 | `tb/sva/fifo_sva.sv` P01-P06 + `bind_all.sv` | Bound in `tb/tests/tb_fifo.f`; Verilator builds with `--assert`, so `make check` and CI run them (#17). P01-P06 pass, seeds 1-3. SVA-only mutation run (TB checks non-fatal, 9 mutants): P06 kills registered `credit_out` (PM-001); P04 no-increment; P05 no-decrement; P01/P02 `full` at DEPTH-1. Survive: simultaneous read/write count change (no hold property), `rd_ptr`/`wr_ptr` stuck (data path, scoreboard), and two mutants equivalent under P01/P02 | Aashish |
 | `tb/env/flit_if.sv` + `t_flit_if` | On `sachin/phase1a-fifo-testbench` | Sachin |
-| tb/sva/PLAN.md | v2, 52 properties (V01-V15 Aashish, S01-S08 Sachin, R01-R14 Revanth, A01-A15 Arnav), G1 (#17). FIFO P01-P06 in `fifo_sva.sv` are V01-V06 in PLAN.md | Aashish |
+| tb/sva/PLAN.md | v2, 52 properties (P01-P06 + V07-V15 Aashish, S01-S08 Sachin, R01-R14 Revanth, A01-A15 Arnav), G1 (#17). IDs `P01`-`P06` (FIFO, INTERFACE.md s6) then owner-prefixed `V07`-`V15`, `S01`-`S08`, `R01`-`R14`, `A01`-`A15`; signal names from INTERFACE.md and `rr_arbiter` | Aashish |
 | Verilator T4 probe (`##[0:N]`) | done (passed) | Aashish |
 | Simulator and formal-tool decision | Xcelium and Jasper Gold | Aashish, Arnav |
 | Toolchain versions in SYNC.md | 3/4 (Arnav, Sachin, Aashish) | all |
 
-Counters: RTL modules 2/10 on `main` (`input_fifo`, `rr_arbiter`; + `noc_pkg`). Tests on `main` 4 (`tb_smoke`, `tb_noc_pkg`, `tb_fifo`, `tb_rr_arbiter`). SVA 6/52 on `main`, run in CI (P01-P06 = V01-V06); 40 is the Phase 2 floor. Coverage n/a. Bugs logged 0. Paper draft none.
+Counters: RTL modules 2/10 on `main` (`input_fifo`, `rr_arbiter`; + `noc_pkg`). Tests on `main` 4 (`tb_smoke`, `tb_noc_pkg`, `tb_fifo`, `tb_rr_arbiter`). SVA 6/52 on `main`, run in CI (P01-P06); 40 is the Phase 2 floor. Coverage n/a. Bugs logged 0. Paper draft none.
 
 ## Blockers
 1. Gate 1: harness (Sachin, 24 Oct).

@@ -142,7 +142,7 @@ Decisions and notes for everyone:
 ## 2026-10-19 (async, Aashish)
 
 Done:
-- Phase 1a Gate 1 verified: `fifo_sva.sv` (P01–P06 / V01–V06) bound via `bind_all.sv` and passing 100% on `input_fifo` (`t_fifo`) under `--assert` (55/55 checks passed, 0 failures).
+- Phase 1a Gate 1 verified: `fifo_sva.sv` (P01–P06) bound via `bind_all.sv` and passing 100% on `input_fifo` (`t_fifo`) under `--assert` (55/55 checks passed, 0 failures).
 - Pre-merge RTL bug caught via assertion P06 (`a_p06_credit_iff_dequeue` credit timing mismatch); fixed by Revanth in commit `ca65a74`.
 - Reviewed and approved Revanth's PR #13 (`revu/input-fifo`) and Arnav's PR #15 (`README`).
 - Expanded `tb/sva/PLAN.md` to 52 properties (15 Aashish, 8 Sachin, 14 Revanth, 15 Arnav) per team instructions (G1), establishing 40 passing as the Phase 2 exit floor.
