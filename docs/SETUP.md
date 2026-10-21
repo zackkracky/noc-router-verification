@@ -13,7 +13,7 @@ Applies to all four members. Revision: 21 October 2026 (converted from the team'
 
 1. Everything (git, ssh key, clone, make) happens inside the Ubuntu terminal, never in PowerShell or Git Bash. Windows and WSL have separate home folders; a key generated in PowerShell lands in `C:\Users\you\.ssh` and git inside WSL never sees it.
 2. The repo lives under `~/` in Ubuntu, never under `/mnt/c/...`. The Windows filesystem through WSL is 5-10x slower and breaks file permissions and line endings, which shows up as every file marked modified and ssh refusing to load the key.
-3. One GitHub account and one SSH key per person per machine. Never copy a private key (`id_ed25519`) between machines or people. A shared key makes every commit look like one person, which breaks the authorship count that decides author order.
+3. Use your own GitHub account and SSH key. Never share a private key between people. SSH keys control authentication and access; commit authorship is recorded separately through `git config user.name` and `git config user.email` (section 4).
 
 ## What gets installed, and why
 
@@ -164,7 +164,7 @@ That is GitHub's published ED25519 host key. If it matches, type `yes`. If it do
 
 Expected: `Hi <your-username>! You've successfully authenticated, but GitHub does not provide shell access.` The "no shell access" part is normal; the username in the greeting is the test.
 
-If it greets you with someone else's username, the key on this machine is registered to their account: `rm ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub` and redo 5.1 and 5.2.
+If it greets you with someone else's username, do not delete your existing SSH keys. Run `ssh -vT git@github.com` to inspect which key is offered. If a new key is needed, generate it under an unused filename, add its corresponding public key to your own GitHub account, and configure the applicable `Host github.com` block in `~/.ssh/config` with the intended `IdentityFile` and `IdentitiesOnly yes`. Preserve other hosts and any port-443 settings. Run `ssh -T git@github.com` again and confirm your own username.
 
 If it hangs or times out (campus Wi-Fi often blocks port 22), route SSH over 443:
 
@@ -246,10 +246,11 @@ The real check, in the repo:
 ```
 cd ~/proj/noc-router-verification && git pull
 make help
-make check SEEDS="1 2 3"
+make check SEEDS="1 2 3 4 5"
+make neg
 ```
 
-`make check` lints and simulates every `tb/tests/*.f` and writes `logs/summary.txt`; this is what CI runs. Single test: `make sim TEST=tb_fifo SEED=1`. Waveforms: `make sim TEST=tb_fifo SEED=1 WAVES=1` then `make waves TEST=tb_fifo`. On the lab machine add `SIM=xcelium`.
+`make check` lints and simulates every `tb/tests/*.f` and writes `logs/summary.txt`. CI runs `make check SEEDS="1 2 3 4 5"` followed by `make neg`: 42 regression checks and two expected-failure checks. Negative-test results are in `logs/negative-summary.txt`. Single test: `make sim TEST=tb_fifo SEED=1`. Waveforms: `make sim TEST=tb_fifo SEED=1 WAVES=1` then `make waves TEST=tb_fifo`. On the lab machine add `SIM=xcelium` to `make check` or `make sim`. `make neg` uses Verilator only; Xcelium fatal-message matching remains pending qualification.
 
 ## 7. Daily workflow (nobody pushes to main)
 
@@ -259,7 +260,8 @@ Branch name is `<yourname>/<task>`. One task per branch, one PR per branch, squa
 git switch main && git pull              # start from fresh main
 git switch -c revu/input-fifo            # branch: <name>/<task>
 # edit files, then:
-make check SEEDS="1 2 3"                 # green locally before pushing
+make check SEEDS="1 2 3 4 5"             # seven tests: 42 checks
+make neg                                  # two expected-failure checks
 git status                               # confirm only the files you meant
 git add -A && git commit -m "input_fifo: FWFT read, count output, tb_fifo"
 git push -u origin revu/input-fifo
