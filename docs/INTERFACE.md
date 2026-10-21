@@ -1,20 +1,29 @@
 # NoC router interface specification — spec-v1 candidate
 
-Owner: Sachin (V1). Revision: 20 October 2026 (adds s7.2 arbiter contract; 14 October 2026 base). Status: **DRAFT — proposed decisions, not frozen or approved.**
+Owner: Sachin (V1). Revision: 21 October 2026 (self-contained: external citations removed, `main` facts refreshed to `7df0cca`; s7.2 arbiter contract 20 October; 14 October 2026 base). Status: **DRAFT — proposed decisions, not frozen or approved.**
 
 This contract covers the five-port wormhole router, its links, internal front/back boundary, and testbench connections. It is a specification, not executable RTL. Use this filename, `docs/INTERFACE.md`; an additional `interface.spec` file would duplicate the source of truth.
 
 ## 0. Authority and decisions requiring sign-off
 
-Reviewed sources: Project Bible rev 1 (18 September 2026), the original draft (`arnav/phase1-intial-interface` at `aff5816`), and repository `main` at `a20afb5` (14 October 2026). On that `main`, `rtl/pkg/noc_pkg.sv` and its check `tb/tests/tb_noc_pkg.sv` are merged (PR #14) and implement sections 1-2. The FIFO (`revu/input-fifo`) and `tb/env/flit_if.sv` (`sachin/phase1a-fifo-testbench`) exist on branches, not on `main`. No router RTL exists yet.
+Scope of review: this document against the repository state on `main` at `7df0cca` (21 October 2026). It cites no file outside `main`. On `main` today:
 
-The bible says section 5 governs signals until `spec-v1` is tagged. This revision resolves its open decisions explicitly rather than treating the unmerged draft as an approved replacement. Once approved, this document governs behavior; `noc_pkg` implements the agreed constants and types. A disagreement is a defect to resolve in the same PR, not permission for either file to silently override the other.
+| Section | Implemented by | PR |
+|---|---|---|
+| 1-2 parameters, types, flit layout | `rtl/pkg/noc_pkg.sv`, `tb/tests/tb_noc_pkg.sv` | #14 |
+| 6 FIFO contract | `rtl/front/input_fifo.sv`, `tb/tests/tb_fifo.sv`, `tb/sva/fifo_sva.sv` (P01-P06) | #13, #17 |
+| 7.2 arbiter contract | `rtl/back/rr_arbiter.sv`, `tb/tests/tb_rr_arbiter.sv` | #16 |
+| 8 testbench interface | `tb/env/flit_if.sv`, `flit_driver.sv`, `flit_monitor.sv`, `flit_pkt.sv`; `tb_flit_if`, `tb_fifo_link`, `tb_fifo_empty_read` | #18 |
+
+No router datapath RTL exists yet (`input_port`, `route_unit`, `vc_allocator`, `switch_allocator`, `crossbar`, `output_unit`, `router_top`), so sections 3, 5, 7 and 7.1 are unimplemented contract.
+
+This document is the only signal-level authority for the project and is self-contained: every decision it relies on is stated here, and no earlier interface draft or pre-repository planning document is needed to read it. Those earlier documents are historical and are not cited in a PR, a property or the paper; where their content survives, it has been restated here. Until `spec-v1` is tagged this is a candidate and the decision table below is what reviewers sign. Once tagged, this document governs behavior and `noc_pkg` implements the agreed constants and types. A disagreement between this document and RTL is a defect to resolve in the same PR, not permission for either to silently override the other.
 
 | Decision | This candidate chooses | Reviewers |
 |---|---|---|
 | T1 credit encoding | Scalar `credit_valid` plus `credit_vc`; at most one dequeue per input port per cycle | Sachin, Revanth |
 | T2 VC location | Sideband `flit_vc` only; no VC bits inside `flit` | All four |
-| Flit metadata | Restore source coordinates, packet ID and flit index from bible section 5.1; fixed 30-bit metadata | All four |
+| Flit metadata | Header carries source coordinates, packet ID and flit index; fixed 30-bit metadata, laid out field by field in section 2 | All four |
 | T9 VC ownership | Single busy/owner table in `vc_allocator`; `output_unit` owns credits only | Revanth, Arnav |
 | Credit timing | Debit at final SA grant/output-register load; register FIFO credit return once in `input_port`; no same-edge zero-credit bypass | Revanth, Arnav, Sachin |
 | FIFO boundaries | Strict no-write-at-full/no-read-at-empty contract, including simultaneous requests; no empty bypass | Revanth, Aashish |
@@ -235,7 +244,7 @@ One synchronous FWFT FIFO per input VC: `DEPTH=BUFFER_DEPTH`, `WIDTH=FLIT_WIDTH`
 
 All FIFO storage need not reset; pointers/count must reset so no stale entry is valid. The FIFO has a same-cycle internal `credit_out`; `input_port` registers it once as specified above.
 
-The original draft relabelled P04–P06 incorrectly. Pending a complete approved PLAN.md, preserve the bible's Gate-1 mapping: P01 no write while full, P02 no read while empty, P03 count range, P04 write-only increment, P05 read-only decrement, P06 credit iff dequeue. FWFT stability and reset checks are additional requirements; Aashish assigns their IDs. The inspected PLAN.md stops inside a template and does not contain the claimed 40-row register.
+This section fixes the Gate-1 FIFO property IDs: P01 no write while full, P02 no read while empty, P03 count range, P04 write-only increment, P05 read-only decrement, P06 credit iff dequeue. `tb/sva/PLAN.md` and `tb/sva/fifo_sva.sv` on `main` both use these IDs; renumbering any of them changes all three files in one PR. FWFT stability and reset checks are additional requirements; Aashish assigns their IDs in `tb/sva/PLAN.md`.
 
 ## 7. Front/back boundary and arbitration
 
@@ -341,7 +350,7 @@ All clocking blocks sample inputs `#1step` before the rising edge; driving block
 
 Use an independently written routing reference following section 3, not the DUT's route function. Record accepted injection `{input_port,input_vc,pkt_id,flit_idx,flit}` and accepted outputs `{output_port,output_vc,flit}`. Output VC may differ from input VC.
 
-For this single-router profile, generator allocates `pkt_id` globally across all input ports/VCs until observed packet completion. Never reuse an outstanding ID; stop/wait when 256 IDs are occupied. The bible's queue key `(source port,input VC,pkt_id)` remains useful internally, but input port/VC cannot be recovered from output sideband after remapping. Global outstanding-ID uniqueness makes output matching unambiguous without adding flit fields. For later mesh traffic, revisit identity with source coordinates/NI identity; BODY source fields are opaque.
+For this single-router profile, generator allocates `pkt_id` globally across all input ports/VCs until observed packet completion. Never reuse an outstanding ID; stop/wait when 256 IDs are occupied. A queue key of `(source port,input VC,pkt_id)` remains useful inside the scoreboard, but input port/VC cannot be recovered from output sideband after remapping. Global outstanding-ID uniqueness makes output matching unambiguous without adding flit fields. For later mesh traffic, revisit identity with source coordinates/NI identity; BODY source fields are opaque.
 
 On output HEAD/HEAD_TAIL, use pkt_id to select its expectation and open tracking at `(output_port,output_vc)`. Check route, full flit bits, flit_idx order and length. BODY/TAIL match that open packet. TAIL closes it; HEAD_TAIL opens/closes atomically. Packet order is preserved per input VC and within a packet, not globally across all inputs/VCs. At successful drain, every expected queue is empty. Reset clears expectations and IDs.
 

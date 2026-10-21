@@ -260,7 +260,7 @@ Red code on your own branch is fine; the PR is not marked ready until lint and b
 | Lost work or bad reset | `git reflog`, `git reset --hard HEAD@{n}`; commits survive 90 days | re-type it |
 | Detached HEAD | `git switch -c rescue` | close the terminal |
 
-If a rule here disagrees with `docs/STATE.md` or the timeline, this section wins for process and the timeline wins for dates. Change either by PR.
+If a rule here disagrees with `docs/STATE.md`, this section wins for process and `docs/STATE.md` wins for dates and status. Change either by PR.
 
 ## Documents
 
