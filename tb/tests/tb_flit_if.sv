@@ -28,6 +28,11 @@ module tb_flit_if;
     $display("TEST PASSED");
     $finish;
   end
+  string dumpfile;
+  initial if ($value$plusargs("dumpfile=%s", dumpfile)) begin // waves only when make passes +dumpfile= (WAVES=1)
+    $dumpfile(dumpfile);
+    $dumpvars(0, tb_flit_if);
+  end
   initial begin
     #500;
     $fatal(1, "link probe timeout");

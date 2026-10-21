@@ -119,10 +119,12 @@ module fifo_link_case #(
     return pkt.pack();
   endfunction
 
-  task automatic send(input int unsigned vc, id, idx, len);
+  // b2b=1: caller sits at a negedge (previous send just returned), load the next command in the same
+  // low phase so flit_valid stays high on consecutive edges (INTERFACE.md s4). b2b=0: one idle cycle.
+  task automatic send(input int unsigned vc, id, idx, len, input bit b2b = 0);
     int unsigned waited = 0;
     if (vc >= (1 << VW)) $fatal(1, "test command VC cannot be encoded");
-    @(negedge clk);
+    if (!b2b || clk) @(negedge clk);
     cmd_vc = VW'(vc); cmd_flit = make_flit(id, idx, len); cmd_valid = 1;
     do begin
       @(posedge clk);
@@ -180,15 +182,27 @@ module fifo_link_case #(
     @(negedge clk); cmd_valid = 0; drain = 0;
     send(0, 32, 1, 2);
     for (int unsigned v = 0; v < V; v++) drain_one(v);
+    // Full-rate fill: D consecutive valid edges per VC, then drain while the tail of the packet
+    // is still arriving (simultaneous enq/deq, s6 table row "between empty/full, 1, 1").
+    for (int unsigned v = 0; v < V; v++) begin
+      drain = 0;
+      for (int unsigned i = 0; i < D; i++) send(v, 80+v, i, D+2, 1'b1);
+      if (int'(count[v]) < D-1) $fatal(1, "full-rate fill lost a flit");
+      drain_vc = v; drain = 1;
+      send(v, 80+v, D, D+2, 1'b1);
+      send(v, 80+v, D+1, D+2, 1'b1);
+      drain_one(v);
+    end
     // Seeded packets, VC choice and consumer delay exercise repeated wraparound.
     for (int unsigned n = 0; n < 20; n++) begin
       automatic int unsigned rv = $urandom_range(0, V-1);
       automatic int unsigned len = $urandom_range(1, D+3);
       automatic int unsigned delay_cycles = $urandom_range(1, D+3);
+      automatic bit b2b = 1'($urandom_range(0, 1)); // half the packets at full link rate
       drain = 0;
       fork
         begin
-          for (int unsigned i = 0; i < len; i++) send(rv, 100+n, i, len);
+          for (int unsigned i = 0; i < len; i++) send(rv, 100+n, i, len, b2b);
         end
         begin
           repeat (delay_cycles) @(negedge clk);

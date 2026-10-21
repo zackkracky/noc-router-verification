@@ -106,7 +106,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 
 Status values: planned, skeleton, unit-tested, integrated. "unit-tested" means lint clean and passing on `main`.
 
-SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). Link components prepared on `sachin/phase1a-driver-monitor`: `flit_if`, `flit_pkt`, `flit_driver`, `flit_monitor`, `tb_flit_if` and `tb_fifo_link`.
+SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). Link environment on `main` (#18): `flit_if`, `flit_pkt`, `flit_driver`, `flit_monitor`; tests `tb_flit_if`, `tb_fifo_link`.
 
 ## Phase 1a link environment
 

@@ -1,0 +1,39 @@
+[*] tb_fifo_link: u_w32 instance (F=32 V=2 D=2), VC0 path; hex radix for flits, decimal for counters.
+[timestart] 0
+[size] 1600 900
+@28
+TOP.tb_fifo_link.u_w32.clk
+TOP.tb_fifo_link.u_w32.rst_n
+TOP.tb_fifo_link.u_w32.cmd_valid
+TOP.tb_fifo_link.u_w32.cmd_ready
+@22
+TOP.tb_fifo_link.u_w32.cmd_vc[0:0]
+TOP.tb_fifo_link.u_w32.cmd_flit[31:0]
+@28
+TOP.tb_fifo_link.u_w32.link.flit_valid
+@22
+TOP.tb_fifo_link.u_w32.link.flit_vc[0:0]
+TOP.tb_fifo_link.u_w32.link.flit[31:0]
+@24
+TOP.tb_fifo_link.u_w32.credits[0][31:0]
+TOP.tb_fifo_link.u_w32.credits[1][31:0]
+@28
+TOP.tb_fifo_link.u_w32.g_fifo[0].u_fifo.wr_valid
+TOP.tb_fifo_link.u_w32.g_fifo[0].u_fifo.rd_ready
+TOP.tb_fifo_link.u_w32.g_fifo[0].u_fifo.rd_valid
+@24
+TOP.tb_fifo_link.u_w32.g_fifo[0].u_fifo.count[1:0]
+@28
+TOP.tb_fifo_link.u_w32.g_fifo[0].u_fifo.full
+TOP.tb_fifo_link.u_w32.g_fifo[0].u_fifo.empty
+TOP.tb_fifo_link.u_w32.g_fifo[0].u_fifo.credit_out
+TOP.tb_fifo_link.u_w32.link.credit_valid
+@22
+TOP.tb_fifo_link.u_w32.link.credit_vc[0:0]
+@28
+TOP.tb_fifo_link.u_w32.observed
+TOP.tb_fifo_link.u_w32.popped
+@24
+TOP.tb_fifo_link.u_w32.same_vc[31:0]
+TOP.tb_fifo_link.u_w32.different_vc[31:0]
+TOP.tb_fifo_link.u_w32.last_credit[31:0]

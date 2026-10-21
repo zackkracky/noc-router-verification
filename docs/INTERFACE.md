@@ -324,7 +324,7 @@ All state updates use `always_ff @(posedge clk)` and `if (!rst_n)` first. After 
 
 Reset mid-packet flushes FIFO contents, pending flits, delayed credits, packet-open state and scoreboard expectations. Such flushed packets are abandoned, not counted as loss. Drive reset away from the active edge; hold it low over at least two rising edges in TB. Ignore transfers while reset is sampled low.
 
-`tb/env/flit_if.sv` (prepared on `sachin/phase1a-driver-monitor`) bundles the five link signals with `clk,rst_n`, parameterized by FLIT_WIDTH and NUM_VCS. It deliberately owns no FIFO, credit counter, packet generator, or protocol assertions.
+`tb/env/flit_if.sv` (on `main`, #18) bundles the five link signals with `clk,rst_n`, parameterized by FLIT_WIDTH and NUM_VCS. It deliberately owns no FIFO, credit counter, packet generator, or protocol assertions.
 
 | View | Reads | Drives |
 |---|---|---|
