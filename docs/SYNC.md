@@ -215,3 +215,35 @@ Validation on updated main `3ea9243` (Verilator 5.020):
 - `make check SEEDS="1 2 3"`: 24/24 PASS with `--assert`.
 - P01-P06 bound to the FIFO instances in both `tb_fifo` and `tb_fifo_link`.
 - `+bad_framing` and `+bad_vc` rejected with the intended framing/VC diagnostics.
+
+
+## 2026-10-21 (PR #18 review follow-up, Sachin)
+
+Changes:
+- Added explicit admission evidence for the coincident VC1 command, per-fill consecutive-valid-edge checks and exact D-1 occupancy at the final command's return.
+- Retained the buffered-head reset case; added reset with a registered flit pending and with a delayed credit pending. Each directed case checks its precondition before asserting reset.
+- Added the fourth (F,V,D) point (32,1,4); only multi-VC cases require a different-VC event. This is four configurations, not a 27-point Cartesian sweep.
+- Added registered credit observations to the passive monitor and checked their event/VC sampling in the harness.
+- Removed the raw-wire probe; `tb_flit_if` now tests transaction pack/unpack only, retaining its existing top/filelist name.
+- Added `make neg` and a CI step requiring nonzero exit plus the exact expected fatal diagnostic for both framing and invalid-VC injections. The invalid-VC injection is exercised by the V=3 case. CI now requests seeds 1-5 and publishes both summaries.
+- Shortened README; kept INTERFACE s8 normative. Restored pre-merge Gate 1/test-counter status and recorded the inline-property undercount and separate RTL-cleanup follow-up.
+
+Review correction (item 4):
+- INTERFACE s6 explicitly makes rd_ready an empty-forbidden pop strobe. Removing the harness guard caused the bound P02 assertion to fail on correct RTL.
+- Normal `tb_fifo_link` therefore retains the guard and all bound P01-P06 checks. The separate `tb_fifo_empty_read` intentionally drives the illegal boundary row without binding P01/P02, as s6 permits; the existing inline RTL safety assertions remain active. It checks empty reads before and after a real enqueue/dequeue, with no phantom credit or occupancy change.
+- The return adapter compares credit with `rd_ready && rd_valid` and records pops only on actual dequeue.
+
+Qualification/follow-ups:
+- Xcelium and the optional FLIT_IF_CLOCKING probe remain pending on 26 Oct. The Makefile already has `xrun -timescale 1ns/1ps`; no timescale fix was necessary.
+- Verilator/Xcelium random streams are simulator-specific; equal seed numbers are not equivalent stimulus.
+- Qualify the optional clocking blocks on 26 Oct or remove them if qualification fails. No clocking-block acceptance or spec-v1 freeze is claimed.
+- Moving six inline FIFO properties plus three inline tb_fifo assertions, assigning a hold-property P-number, and replacing the RTL initial depth check belong in a separate PR. Mixed-VC random-traffic expansion and the helper-file rename remain separate follow-ups.
+- Gate 1 stays pending until these changes are verified, approved and merged; all four spec sign-offs must refer to one agreed commit.
+
+Validation of this review revision (Verilator 5.020, --assert):
+- `make check SEEDS="1 2 3 4 5" WAVES=1`: 42/42 PASS (seven warning-fatal lint checks plus 35 simulations); actual per-check results in logs/summary.txt.
+- `make neg WAVES=1`: 2/2 PASS, each requiring nonzero exit and the intended `%Fatal` message; logs/negative-summary.txt and per-injection logs retain the evidence.
+- FST files generated for tb_fifo_link, transaction-only tb_flit_if and tb_fifo_empty_read. GTKWave GUI was not visually checked in this environment.
+- In isolated copies, `credit_out = rst_n && rd_ready` was caught by tb_fifo_empty_read, and a one-bit error in flit_pkt.pack() was caught by tb_flit_if. Mutants were never applied to the PR sources.
+- This environment used local C++ precompiled-header include overrides to work around its compiler; no repository compiler/simulator settings were changed for that workaround.
+- Attach logs/summary.txt (or the new CI run link after pushing) to PR #18 before merge. Local results are not a claim that the new CI revision has already run.

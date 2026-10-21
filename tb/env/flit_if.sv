@@ -29,7 +29,7 @@ interface flit_if #(
           credit_valid, credit_vc
   );
 
-  // Enable only in clocking-block-only tests on Verilator 5.020.
+  // Optional clocking views require simulator qualification before use.
 `ifdef FLIT_IF_CLOCKING
   /* verilator lint_off UNUSEDSIGNAL */
   clocking cb @(posedge clk);

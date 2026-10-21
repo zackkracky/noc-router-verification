@@ -106,32 +106,15 @@ One line per module. Updated in the same PR that lands or changes the module (in
 
 Status values: planned, skeleton, unit-tested, integrated. "unit-tested" means lint clean and passing on `main`.
 
-SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). Link environment on `main` (#18): `flit_if`, `flit_pkt`, `flit_driver`, `flit_monitor`; tests `tb_flit_if`, `tb_fifo_link`.
+SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). Link environment proposed in PR #18: `flit_if`, `flit_pkt`, `flit_driver`, `flit_monitor`; tests `tb_flit_if`, `tb_fifo_link`.
 
 ## Phase 1a link environment
 
-`flit_if`, `flit_pkt`, `flit_driver` and `flit_monitor` are in `tb/env/`.
-The driver accepts a command only when `cmd_valid && cmd_ready` at the rising
-edge. It reserves credit at that edge and registers the flit for acceptance
-one edge later. Hold command fields stable until admission. The monitor reads
-pre-edge link signals, checks VC bounds and per-VC packet framing, and emits a
-registered `observed` event. Reset flushes framing state and restores credits.
-These module-based components require no virtual interface.
-
-Run `make sim TEST=tb_fifo_link SEED=1 WAVES=1`. The harness connects the driver
-to real `input_fifo` instances, models one registered credit-return stage, and
-compares monitored arrivals with FIFO dequeues using independent per-VC queues.
-It tests 32/64/128-bit flits, 2/3/4 VCs and depth 2/4/8, seeded packets, full
-stalls, credit conservation, simultaneous same/different-VC events and reset
-mid-packet. The adapter is TB wiring, not production `input_port` RTL. The
-existing `tb_fifo` remains the standalone FIFO test.
-
-`tb_flit_if` preserves the simple raw-signal interface probe. Clocking blocks
-are opt-in with `+define+FLIT_IF_CLOCKING`: hierarchical clocking events are not
-supported by the tested Verilator 5.020 baseline. No clocking-block qualification
-or spec-v1 freeze is claimed. `make check SEEDS="1 2 3"` discovers both new tests.
-FIFO P01-P06 are merged in PR #17. Both `tb_fifo` and `tb_fifo_link` compile
-`fifo_sva.sv` and `bind_all.sv`; the current Makefile enables `--assert`.
+Files: `tb/env/{flit_if,flit_pkt,flit_driver,flit_monitor}.sv`; real-FIFO harness `tb/tests/tb_fifo_link.sv`.
+Run `make sim TEST=tb_fifo_link SEED=1 WAVES=1`; run expected failures with `make neg` (also in CI).
+Four configurations `(F,V,D) = (32,2,2), (64,3,4), (128,4,8), (32,1,4)`; this is not a Cartesian parameter sweep.
+`tb_flit_if` checks transaction pack/unpack only; `tb_fifo_link` binds P01-P06. `tb_fifo_empty_read` separately probes illegal empty reads without binding the environment constraints (INTERFACE s6).
+See [INTERFACE section 8](docs/INTERFACE.md#8-reset-and-testbench-interface) for the contract and [STATE](docs/STATE.md) for tool qualification/status.
 
 ## Coding conventions
 

@@ -13,6 +13,8 @@ module fifo_link_case #(
   logic cmd_ready, observed;
   logic [F-1:0] observed_flit;
   logic [VW-1:0] observed_vc;
+  logic observed_credit, sampled_credit;
+  logic [VW-1:0] observed_credit_vc, sampled_credit_vc;
   int unsigned credits [V];
   int unsigned drain_vc = 0;
   logic [V-1:0] rd_valid, rd_ready, credit, full, empty;
@@ -25,13 +27,16 @@ module fifo_link_case #(
   flit_t admitted_flit;
   logic [VW-1:0] admitted_vc;
   int unsigned same_vc = 0, different_vc = 0, last_credit = 0;
+  int unsigned b2b_edges = 0;
+  bit previous_valid = 0;
   flit_if #(.FLIT_WIDTH(F), .NUM_VCS(V)) link(clk, rst_n);
   flit_driver #(.FLIT_WIDTH(F), .NUM_VCS(V), .BUFFER_DEPTH(D)) driver(
     .link(link), .cmd_valid, .cmd_flit, .cmd_vc, .cmd_ready, .credits);
   flit_monitor #(.FLIT_WIDTH(F), .NUM_VCS(V)) monitor(
-    .link(link), .observed, .observed_flit, .observed_vc);
+    .link(link), .observed, .observed_flit, .observed_vc,
+    .observed_credit, .observed_credit_vc);
 
-  // Independently check command-to-link timing and data before FIFO acceptance.
+  // Check command-to-link timing/data; this mirrors the driver's admission rule.
   always @(posedge clk) begin
     if (!rst_n) begin
       admitted <= 0;
@@ -52,6 +57,7 @@ module fifo_link_case #(
       .clk, .rst_n, .wr_valid(rst_n && link.flit_valid && int'(link.flit_vc) == v),
       .wr_data(link.flit), .rd_ready(rd_ready[v]), .rd_valid(rd_valid[v]),
       .rd_data(rd_data[v]), .count(count[v]), .full(full[v]), .empty(empty[v]), .credit_out(credit[v]));
+    // Normal traffic obeys s6/P02; tb_fifo_empty_read probes illegal requests separately.
     assign rd_ready[v] = rst_n && drain && drain_vc == v && rd_valid[v];
   end
 
@@ -62,10 +68,15 @@ module fifo_link_case #(
     popped <= 0;
     popped_flit <= '0;
     popped_vc <= 0;
+    sampled_credit <= rst_n && link.credit_valid;
+    sampled_credit_vc <= (rst_n && link.credit_valid) ? link.credit_vc : '0;
+    previous_valid <= rst_n && link.flit_valid;
     if (rst_n) begin
+      if (previous_valid && link.flit_valid) b2b_edges <= b2b_edges + 1;
       for (int unsigned v = 0; v < V; v++) begin
-        if (credit[v] !== rd_ready[v]) $fatal(1, "FIFO credit is not same-cycle dequeue");
-        if (rd_ready[v]) begin
+        if (credit[v] !== (rd_ready[v] && rd_valid[v]))
+          $fatal(1, "FIFO credit is not same-cycle dequeue");
+        if (rd_ready[v] && rd_valid[v]) begin
           popped <= 1;
           popped_flit <= rd_data[v];
           popped_vc <= VW'(v);
@@ -79,6 +90,12 @@ module fifo_link_case #(
       end
       if (link.flit_valid && credits[link.flit_vc] == 0) last_credit <= last_credit + 1;
     end
+  end
+
+  always @(negedge clk) begin
+    if (rst_n && (observed_credit !== sampled_credit ||
+        observed_credit_vc !== sampled_credit_vc))
+      $fatal(1, "monitor credit observation mismatch");
   end
 
   // A separate queue per generated VC avoids dynamic queue-array tool limitations.
@@ -134,13 +151,19 @@ module fifo_link_case #(
     @(negedge clk); cmd_valid = 0;
   endtask
 
-  task automatic reset_link;
-    @(negedge clk); rst_n = 0; cmd_valid = 0; drain = 0;
+  // Caller may assert reset immediately in a low phase with a transfer pending.
+  task automatic reset_now;
+    rst_n = 0; cmd_valid = 0; drain = 0;
     repeat (3) @(negedge clk);
     for (int unsigned v = 0; v < V; v++)
       if (credits[v] != D || count[v] != 0) $fatal(1, "reset state mismatch");
     if (link.flit_valid || link.credit_valid) $fatal(1, "reset valid mismatch");
     rst_n = 1;
+  endtask
+
+  task automatic reset_link;
+    @(negedge clk);
+    reset_now();
   endtask
 
   task automatic drain_one(input int unsigned vc);
@@ -174,21 +197,30 @@ module fifo_link_case #(
       drain_one(v);
     end
     // Interleave VC packets, with a return for VC0 while reserving VC1.
-    send(0, 32, 0, 2);
-    send(1, 33, 0, 2);
-    @(negedge clk); drain_vc = 0; drain = 1;
-    @(negedge clk);
-    cmd_vc = VW'(1); cmd_flit = make_flit(33, 1, 2); cmd_valid = 1;
-    @(negedge clk); cmd_valid = 0; drain = 0;
-    send(0, 32, 1, 2);
-    for (int unsigned v = 0; v < V; v++) drain_one(v);
+    if (V > 1) begin
+      send(0, 32, 0, 2);
+      send(1, 33, 0, 2);
+      @(negedge clk); drain_vc = 0; drain = 1;
+      @(negedge clk);
+      cmd_vc = VW'(1); cmd_flit = make_flit(33, 1, 2); cmd_valid = 1;
+      @(negedge clk);
+      if (!(link.flit_valid && link.flit_vc == VW'(1)))
+        $fatal(1, "coincident VC1 send not admitted");
+      cmd_valid = 0; drain = 0;
+      send(0, 32, 1, 2);
+      for (int unsigned v = 0; v < V; v++) drain_one(v);
+    end
     // Full-rate fill: D consecutive valid edges per VC, then drain while the tail of the packet
     // is still arriving (simultaneous enq/deq, s6 table row "between empty/full, 1, 1").
     for (int unsigned v = 0; v < V; v++) begin
+      automatic int unsigned b2b_before = b2b_edges;
       drain = 0;
       for (int unsigned i = 0; i < D; i++) send(v, 80+v, i, D+2, 1'b1);
-      if (int'(count[v]) < D-1) $fatal(1, "full-rate fill lost a flit");
+      if (int'(count[v]) != D-1) $fatal(1, "full-rate fill lost a flit");
       drain_vc = v; drain = 1;
+      // The last registered fill flit is accepted at the next rising edge.
+      @(posedge clk); @(negedge clk);
+      if (b2b_edges - b2b_before < D-1) $fatal(1, "missing back-to-back valid edges");
       send(v, 80+v, D, D+2, 1'b1);
       send(v, 80+v, D+1, D+2, 1'b1);
       drain_one(v);
@@ -211,14 +243,26 @@ module fifo_link_case #(
       join
       drain_one(rv);
     end
-    // Reset flushes buffered HEADs, then each VC must accept a fresh packet.
+    // Retain the buffered-head flush test as well as the pending-transfer cases.
+    send(0, 39, 0, 3);
+    @(negedge clk);
+    if (count[0] != 1) $fatal(1, "reset test missed buffered head");
+    reset_now();
+    // Interrupt a pending flit before its FIFO acceptance edge.
     send(0, 40, 0, 3);
-    reset_link();
+    if (!link.flit_valid) $fatal(1, "reset test missed pending flit");
+    reset_now();
+    // Interrupt a registered return before the driver can consume its credit.
+    send(0, 41, 0, 3);
+    @(negedge clk); drain_vc = 0; drain = 1;
+    @(negedge clk);
+    if (!link.credit_valid) $fatal(1, "reset test missed pending credit");
+    reset_now();
     for (int unsigned v = 0; v < V; v++) begin
       send(v, 64+v, 0, 1);
       drain_one(v);
     end
-    if (same_vc == 0 || different_vc == 0 || last_credit == 0)
+    if (same_vc == 0 || (V > 1 && different_vc == 0) || last_credit == 0)
       $fatal(1, "missing credit corner-case stimulus");
     $display("F=%0d V=%0d D=%0d PASS: same=%0d different=%0d last=%0d",
              F, V, D, same_vc, different_vc, last_credit);

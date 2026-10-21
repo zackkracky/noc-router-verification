@@ -324,7 +324,7 @@ All state updates use `always_ff @(posedge clk)` and `if (!rst_n)` first. After 
 
 Reset mid-packet flushes FIFO contents, pending flits, delayed credits, packet-open state and scoreboard expectations. Such flushed packets are abandoned, not counted as loss. Drive reset away from the active edge; hold it low over at least two rising edges in TB. Ignore transfers while reset is sampled low.
 
-`tb/env/flit_if.sv` (on `main`, #18) bundles the five link signals with `clk,rst_n`, parameterized by FLIT_WIDTH and NUM_VCS. It deliberately owns no FIFO, credit counter, packet generator, or protocol assertions.
+`tb/env/flit_if.sv` bundles the five link signals with `clk,rst_n`, parameterized by FLIT_WIDTH and NUM_VCS. It deliberately owns no FIFO, credit counter, packet generator, or protocol assertions.
 
 | View | Reads | Drives |
 |---|---|---|
@@ -335,7 +335,9 @@ Reset mid-packet flushes FIFO contents, pending flits, delayed credits, packet-o
 | `rx_cb` clocking block | reset, forward flits | Credits |
 | `mon_cb` clocking block | All sampled signals | Nothing |
 
-All clocking blocks sample inputs `#1step` before the rising edge; driving blocks use `output #0` after it. A value written through `cb` at Ek is intended for acceptance at E(k+1), not Ek. Use either a raw RTL driver or clocking-block TB driver per signal, never both. Phase-1 module/task drivers may access a statically instantiated interface; do not claim a class constructor avoids virtual-interface requirements. Probe the exact simulator/version before adopting a virtual-interface class driver. `tb/tests/tb_flit_if.sv` is a raw-signal probe. Verilator 5.020 rejects hierarchical clocking events; clocking blocks are opt-in via `FLIT_IF_CLOCKING` for later qualification. The module-based driver and monitor use raw link signals with pre-edge sampling. No clocking-block acceptance check is claimed.
+All clocking blocks sample inputs `#1step` before the rising edge; driving blocks use `output #0` after it. A value written through `cb` at Ek is intended for acceptance at E(k+1), not Ek. Use either a raw RTL driver or clocking-block TB driver per signal, never both. Module/task drivers may access a statically instantiated interface. Class-based drivers using virtual interfaces require simulator support for that exact configuration. Raw module drivers and monitors sample pre-edge link values; their registered outputs become visible after the edge.
+
+The passive monitor emits registered flit observations (`observed`, `observed_flit`, `observed_vc`) and credit observations (`observed_credit`, `observed_credit_vc`). Each event describes the corresponding valid transfer sampled before that rising edge. Reset clears both observation valids and packet-framing state. Observation data/VC outputs are zero when their event is inactive. Both events may be asserted together.
 
 ## 9. Scoreboard and coverage contract
 

@@ -8,7 +8,9 @@ module flit_monitor #(
   flit_if.mon link,
   output logic observed,
   output logic [FLIT_WIDTH-1:0] observed_flit,
-  output logic [VC_W-1:0] observed_vc
+  output logic [VC_W-1:0] observed_vc,
+  output logic observed_credit,
+  output logic [VC_W-1:0] observed_credit_vc
 );
   import noc_pkg::*;
   bit packet_open [NUM_VCS];
@@ -24,6 +26,8 @@ module flit_monitor #(
     observed <= 1'b0;
     observed_flit <= '0;
     observed_vc <= '0;
+    observed_credit <= 1'b0;
+    observed_credit_vc <= '0;
     if (!link.rst_n) begin
       for (int unsigned i = 0; i < NUM_VCS; i++) begin
         packet_open[i] = 0;
@@ -34,6 +38,10 @@ module flit_monitor #(
       if ($isunknown({link.flit_valid, link.credit_valid})) $fatal(1, "monitor: unknown valid");
       if (link.credit_valid && ($isunknown(link.credit_vc) || int'(link.credit_vc) >= NUM_VCS))
         $fatal(1, "monitor: invalid credit VC");
+      if (link.credit_valid) begin
+        observed_credit <= 1'b1;
+        observed_credit_vc <= link.credit_vc;
+      end
       if (link.flit_valid) begin
         if ($isunknown({link.flit, link.flit_vc}) || int'(link.flit_vc) >= NUM_VCS)
           $fatal(1, "monitor: invalid flit/VC");
