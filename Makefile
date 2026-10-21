@@ -35,7 +35,7 @@ endif
 TESTS ?= $(sort $(basename $(notdir $(wildcard tb/tests/*.f))))
 SEEDS ?= 1
 
-.PHONY: help check-sources lint lint-rtl build sim run waves check regress cov formal clean
+.PHONY: help check-sources lint lint-rtl build sim run waves check neg regress cov formal clean
 
 help:
 	@echo "make lint     TEST=tb_noc_pkg                Verilator -Wall, warnings fatal"
@@ -46,6 +46,7 @@ help:
 	@echo "make waves    TEST=tb_noc_pkg SEED=1         open that dump in GTKWave"
 	@echo "make sim      TEST=tb_noc_pkg SIM=xcelium    same test on xrun (VCD if WAVES=1)"
 	@echo "make check    SEEDS=\"1 2 3\"                lint + sim every tb/tests/*.f, summary in logs/summary.txt (CI runs this)"
+	@echo "make neg                                  Verilator expected-fail framing and invalid-VC tests"
 	@echo "make regress | cov | formal                Phase 2"
 	@echo "make clean"
 
@@ -78,6 +79,21 @@ endif
 	@grep -qx "TEST PASSED" $(LOG) || { echo "FAIL: $(TEST) did not print TEST PASSED"; exit 1; }
 
 run: sim
+
+# Keep a separate summary so positive and expected-fail results cannot mask each other.
+neg:
+	@$(MAKE) --no-print-directory build TEST=tb_fifo_link SIM=verilator
+	@ulimit -c 0; mkdir -p $(LOGDIR); : > $(LOGDIR)/negative-summary.txt; fail=0; \
+	for mode in bad_framing bad_vc; do \
+	  case $$mode in \
+	    bad_framing) expected='monitor: packet framing/order mismatch' ;; \
+	    bad_vc) expected='driver: invalid command VC' ;; \
+	  esac; \
+	  rc=0; obj_tb_fifo_link/sim +$$mode >$(LOGDIR)/tb_fifo_link_$$mode.log 2>&1 || rc=$$?; \
+	  if test $$rc -ne 0 && grep -F '%Fatal' $(LOGDIR)/tb_fifo_link_$$mode.log | grep -Fq "$$expected"; then \
+	    result=PASS; else result=FAIL; fail=1; fi; \
+	  printf '%s %s (exit=%s)\n' "$$mode" "$$result" "$$rc" | tee -a $(LOGDIR)/negative-summary.txt; \
+	done; exit $$fail
 
 waves:
 	@f=$$(ls -t $(LOGDIR)/$(TEST)_s$(SEED).fst $(LOGDIR)/$(TEST)_s$(SEED).vcd 2>/dev/null | head -1); \

@@ -27,7 +27,10 @@ jobs:
           verilator --version
 
       - name: Lint and sim every test (make check)
-        run: make check SEEDS="1 2 3"
+        run: make check SEEDS="1 2 3 4 5"
+
+      - name: Expected-fail link tests
+        run: make neg
 
       - name: Job summary
         if: always()
@@ -36,6 +39,7 @@ jobs:
             echo '### lint-and-sim'
             echo '```'
             cat logs/summary.txt 2>/dev/null || echo 'no summary: make check did not start'
+            cat logs/negative-summary.txt 2>/dev/null || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 

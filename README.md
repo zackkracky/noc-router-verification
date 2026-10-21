@@ -2,7 +2,9 @@
 
 ![CI](https://github.com/zackkracky/noc-router-verification/actions/workflows/ci.yml/badge.svg)
 
-Parameterized 5-port wormhole NoC router (virtual channels, XY routing, round-robin switch allocation, credit-based flow control) with a SystemVerilog verification environment: constrained-random traffic, reference-model scoreboard, SVA library, functional coverage, formal proofs of safety properties. The verification methodology is the contribution; the router is the vehicle.
+Parameterized 5-port wormhole NoC router (virtual channels, XY routing, round-robin switch allocation, credit-based flow control) and a SystemVerilog verification environment being built around it. Planned: constrained-random traffic with a reference-model scoreboard, a 52-property SVA library, functional coverage, and JasperGold proofs of the safety properties. The verification methodology is the contribution; the router is the vehicle. The planned paper will compare which bug classes constrained-random simulation, SVA in simulation and formal each catch, using 37 mutants in 7 classes.
+
+On `main` today (Phase 1): `noc_pkg`, `input_fifo` and `rr_arbiter` unit-tested with CI green; FIFO properties P01-P06 bound and passing in CI; the 52-property plan in `tb/sva/PLAN.md`; one property-caught pre-merge defect (PM-001) in `docs/BUG_LOG.md`. The scoreboard, coverage model and formal runs are Phase 2 (Jan-Feb 2027); `tb/cov/` and `formal/` do not exist yet.
 
 Guide: Prof. P. Anuradha, CBIT. Target: DVCon India 2027.
 
@@ -30,11 +32,12 @@ make lint TEST=tb_noc_pkg
 make sim  TEST=tb_noc_pkg SEED=1
 make sim  TEST=tb_noc_pkg SEED=1 WAVES=1   # dumps logs/tb_noc_pkg_s1.fst
 make waves TEST=tb_noc_pkg SEED=1          # opens it in GTKWave
-make check SEEDS="1 2 3"                   # every test, as CI runs it; logs/summary.txt
+make check SEEDS="1 2 3 4 5"               # seven tests: 42 checks; logs/summary.txt
+make neg                                   # two expected failures; logs/negative-summary.txt
 make clean
 ```
 
-Every test prints `TEST PASSED`; `make sim` fails if the marker is missing. CI (`lint-and-sim`) runs `make check SEEDS="1 2 3"` on every PR and on push to `main`: every `tb/tests/*.f` is linted and simulated, the summary is on the run page, and `logs/` (plus waves for failing seeds) is downloadable as the run artifact for 14 days.
+Every test prints `TEST PASSED`; `make sim` fails if the marker is missing. CI (`lint-and-sim`) runs `make check SEEDS="1 2 3 4 5"` followed by `make neg` on every PR and on push to `main`: every `tb/tests/*.f` is linted and simulated, both summaries are on the run page, and `logs/` (plus waves for failing seeds) is downloadable as the run artifact for 14 days.
 
 ### Make targets
 
@@ -45,7 +48,8 @@ Every test prints `TEST PASSED`; `make sim` fails if the marker is missing. CI (
 | `build` | `TEST=` | compile only |
 | `sim` (alias `run`) | `TEST= SEED= WAVES=0/1 SIM=verilator/xcelium` | build and run, require `TEST PASSED`; logs in `logs/<test>_build_<sim>.log` and `logs/<test>_s<seed>_<sim>.log` |
 | `waves` | `TEST= SEED=` | open the newest `.fst`/`.vcd` for that test and seed, with `tb/tests/waves/<TEST>.gtkw` if present |
-| `check` | `SEEDS="1 2 3" TESTS= SIM=` | lint once and sim per seed for every `tb/tests/*.f` (or `TESTS=`); one line per result in `logs/summary.txt`; non-zero exit on any FAIL. CI runs exactly this |
+| `check` | `SEEDS="1 2 3 4 5" TESTS= SIM=` | lint once and sim per seed for every `tb/tests/*.f` (or `TESTS=`); one line per result in `logs/summary.txt`; non-zero exit on any FAIL. CI runs exactly this |
+| `neg` | `WAVES=0/1` | Verilator expected-failure tests for malformed framing and invalid VC; requires nonzero exit and the expected fatal message; CI runs this after `check` |
 | `regress`, `cov`, `formal` | — | Phase 2 stubs |
 | `clean` | — | removes `obj_*`, `xcelium_*`, `logs/` |
 
@@ -58,10 +62,10 @@ Filelist resolution: `tb/tests/<TEST>.f` if it exists, else `filelist.f`; `FILEL
 | `rtl/pkg/` | `noc_pkg.sv`: constants, enums, 30-bit `hdr_t`, `vc_w()` / `cnt_w()` helpers | Revanth |
 | `rtl/front/` | input side: FIFOs, routing, input port, VC allocator | Arnav |
 | `rtl/back/` | output side: arbiter, switch allocator, crossbar, output units, `router_top` | Revanth |
-| `tb/env/` | `flit_if`, driver, monitor, scoreboard, generator, env | Aashish |
+| `tb/env/` | PR #18 adds `flit_if`, `flit_pkt`, driver and monitor; scoreboard, generator and env are planned | Aashish |
 | `tb/tests/` | one `tb_<name>.sv` plus `tb_<name>.f` per test; `waves/` holds a `.gtkw` per test | Aashish |
 | `tb/sva/` | `PLAN.md` (52 properties), one `<block>_sva.sv` per block, `bind_all.sv` (only place SVA attaches) | Sachin |
-| `scripts/` | `regress.sh`, `cov_merge.py` (Phase 2) | Arnav |
+| `scripts/` | planned: `regress.sh`, `cov_merge.py`, `mutate.py` (Phase 2) | Arnav |
 | `docs/` | `INTERFACE.md`, `STATE.md`, `SYNC.md`, `BUG_LOG.md`, `wavedrom/` timing diagrams, `figures/` | Aashish |
 | `docs/wavedrom/` | `head_pipeline.json`, `credit_stall.json` and rendered PNGs; the timing reference for INTERFACE.md s5 | Aashish |
 
@@ -94,7 +98,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | Module | File | Owner | Purpose | Status |
 |---|---|---|---|---|
 | `noc_pkg` | `rtl/pkg/noc_pkg.sv` | Arnav | constants, enums, `hdr_t`, width helpers | unit-tested (`tb_noc_pkg`, PR #14) |
-| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | unit-tested (`tb_fifo`, #11); PM-001 fixed before merge |
+| `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | unit-tested (`tb_fifo`, PR #13); PM-001 fixed before merge |
 | `route_unit` | `rtl/front/route_unit.sv` | Revanth | combinational XY route compute, `out_port_onehot[4:0]`; `route_credit` input reserved for WF | planned |
 | `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, registered credit return, SA request | planned |
 | `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
@@ -106,7 +110,15 @@ One line per module. Updated in the same PR that lands or changes the module (in
 
 Status values: planned, skeleton, unit-tested, integrated. "unit-tested" means lint clean and passing on `main`.
 
-SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). On a branch: `tb/env/flit_if.sv` (`sachin/phase1a-fifo-testbench`).
+SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). Link environment proposed in PR #18: `flit_if`, `flit_pkt`, `flit_driver`, `flit_monitor`; tests `tb_flit_if`, `tb_fifo_link`.
+
+## Phase 1a link environment
+
+Files: `tb/env/{flit_if,flit_pkt,flit_driver,flit_monitor}.sv`; real-FIFO harness `tb/tests/tb_fifo_link.sv`.
+Run `make sim TEST=tb_fifo_link SEED=1 WAVES=1`; run expected failures with `make neg` (also in CI).
+Four configurations `(F,V,D) = (32,2,2), (64,3,4), (128,4,8), (32,1,4)`; this is not a Cartesian parameter sweep.
+`tb_flit_if` checks transaction pack/unpack only; `tb_fifo_link` binds P01-P06. `tb_fifo_empty_read` separately probes illegal empty reads without binding the environment constraints (INTERFACE s6).
+See [INTERFACE section 8](docs/INTERFACE.md#8-reset-and-testbench-interface) for the contract and [STATE](docs/STATE.md) for tool qualification/status.
 
 ## Coding conventions
 
@@ -281,7 +293,7 @@ If a rule here disagrees with `docs/STATE.md` or the timeline, this section wins
 | Icarus 12 | everyone | fallback simulation |
 | GTKWave | everyone | `make waves` |
 | Xcelium | college lab | `SIM=xcelium` cross-check of every unit test |
-| JasperGold | college lab | Phase 2 formal on safety properties |
+| JasperGold | college lab | Phase 2 formal on safety properties (lab logins requested Oct 2026; no proofs run yet) |
 
 Liveness properties use `##[0:N]` in simulation and `s_eventually` under `` `ifdef FORMAL ``.
 
