@@ -9,7 +9,7 @@ Append-only. One block per sync: date, done / planned / blocked per person, deci
   - Arnav:
     zackkracky | Ubuntu 26.04.1 LTS | Verilator 5.032 2025-01-01 rev (Debian 5.032-1) |  Icarus Verilog version 12.0 (stable) () | git 2.53.0 |  Hi zackkracky
   - Revanth:
-
+    revantharigela | Ubuntu 24.04.2 LTS | Verilator 5.024 2024-04-05 | Icarus Verilog version 12.0 (stable) () | git 2.43.0 | Hi revantharigela
   - Sachin:
     sachin19-02 | Ubuntu 24.04.5 LTS | Verilator 5.020 2024-01-01 rev (Debian 5.020-1) | Icarus Verilog version 12.0 (stable) () | git 2.43.0 | Hi sachin19-02
   - Aashish:
