@@ -1,71 +1,91 @@
-// switch_allocator: separable input-first switch allocation (INTERFACE.md s7, s7.2); sa_req/sa_out_port[p][v] in, sa_grant[p][v] + xbar_sel[o][p] + issue[o] out, all combinational
+// switch_allocator: input-first separable switch allocation (INTERFACE.md s7, s7.2); sa_req/sa_out_port[p][v] in, sa_grant[p][v] + xbar_sel[o][p] + issue[o] out, all combinational
 `default_nettype none
 
 module switch_allocator
   import noc_pkg::*;
-#(
+  #(
   parameter int unsigned NUM_VCS = DEF_NUM_VCS
-) (
-  input  logic                                          clk,
-  input  logic                                          rst_n,        // sync, active-low (s8)
-  input  logic [NUM_PORTS-1:0][NUM_VCS-1:0]             sa_req,       // ACTIVE && !empty && ocredit_avail; must not depend on a grant (s7)
-  input  logic [NUM_PORTS-1:0][NUM_VCS-1:0][PORT_W-1:0] sa_out_port,  // held encoded route, port_e; caller guarantees < NUM_PORTS
-  output logic [NUM_PORTS-1:0][NUM_VCS-1:0]             sa_grant,     // final grant: input FIFO dequeues this VC at this edge; onehot0 per input
-  output logic [NUM_PORTS-1:0][NUM_PORTS-1:0]           xbar_sel,     // [o][p] crossbar select, onehot0 per output
-  output logic [NUM_PORTS-1:0]                          issue         // |xbar_sel[o]: output register load and credit debit
-);
+  ) (
+  input  logic clk,
+  input  logic rst_n,
+  input  logic [NUM_PORTS-1:0][NUM_VCS-1:0] sa_req, //i/p active & FIFO not empty considering resp. credit availability.must not depend on a grant (s7)
+  input  logic [NUM_PORTS-1:0][NUM_VCS-1:0][PORT_W-1:0] sa_out_port, //held encoded route.caller guarantees < NUM_PORTS (s7, formal/assume.sv)
+  output logic [NUM_PORTS-1:0][NUM_VCS-1:0] sa_grant, //onehot0 per input
+  output logic [NUM_PORTS-1:0][NUM_PORTS-1:0] xbar_sel,
+  output logic [NUM_PORTS-1:0] issue //status of i/p assigned to o/p
+  );
 
-  localparam int unsigned VC_IW = vc_w(NUM_VCS);                      // stage-1 rr_arbiter IDX_W
-  localparam int unsigned P_IW  = $clog2(NUM_PORTS);                  // stage-2 rr_arbiter IDX_W
+  localparam int unsigned VC_INDEX_W = vc_w(NUM_VCS); //1 rr_arbiter
+  localparam int unsigned PORT_INDEX_W = $clog2(NUM_PORTS); //2 rr_arbiter
 
-  logic [NUM_PORTS-1:0][NUM_VCS-1:0]   s1_pick;                       // stage-1 VC pick per input, onehot0
-  logic [NUM_PORTS-1:0][VC_IW-1:0]     s1_pick_idx;
-  logic [NUM_PORTS-1:0]                s1_pick_vld;
-  logic [NUM_PORTS-1:0][PORT_W-1:0]    s1_pick_port;                  // output the stage-1 pick is routed to
-  logic [NUM_PORTS-1:0][NUM_PORTS-1:0] s2_req;                        // [o][p] stage-2 requests
-  logic [NUM_PORTS-1:0][NUM_PORTS-1:0] xbar_sel_t;                    // [p][o] transpose of xbar_sel
-  logic [NUM_PORTS-1:0]                in_won;                        // input p won stage 2 at some output
+  logic [NUM_PORTS-1:0][NUM_VCS-1:0] selected_vc;
+  logic [NUM_PORTS-1:0][VC_INDEX_W-1:0] selected_vc_index;
+  logic [NUM_PORTS-1:0] selected_vc_valid;//indicates if stage-1 found a requesting VC
+  logic [NUM_PORTS-1:0][PORT_W-1:0] selected_out_port;
+  logic [NUM_PORTS-1:0][NUM_PORTS-1:0] output_requests;//pass stage-1,p request to o [o][p]
+  logic [NUM_PORTS-1:0][NUM_PORTS-1:0] xbar_sel_by_input;//xbar_sel with inverted dimensions[p][o]
+  logic [NUM_PORTS-1:0] input_won;
 
-  // Stage 1: one NUM_VCS-way arbiter per input picks at most one requesting VC.
-  // Its pointer rotates only on a final grant, so losing stage 2 re-offers the same VC (s7, s7.2).
-  for (genvar p = 0; p < NUM_PORTS; p++) begin : g_in
-    rr_arbiter #(.N(NUM_VCS)) u_s1 (
-      .clk       (clk),
-      .rst_n     (rst_n),
-      .req       (sa_req[p]),
-      .en        (in_won[p]),                                         // == |sa_grant[p]
-      .grant     (s1_pick[p]),
-      .grant_idx (s1_pick_idx[p]),
-      .grant_vld (s1_pick_vld[p])
-    );
+  /* 
+    Stage 1:A single <NUM_VCS>-way arbiter per input picks at most one requesting VC.
+    The pointer rotates only on a final grant (en = input_won)
+  */
 
-    assign s1_pick_port[p] = sa_out_port[p][s1_pick_idx[p]];          // route held by the picked VC
-    assign in_won[p]       = |xbar_sel_t[p];                          // onehot0: one pick requests one output
-    assign sa_grant[p]     = in_won[p] ? s1_pick[p] : '0;             // subset of the pick, so subset of sa_req
-  end
+  /*
+    stage 2:input that loses, re-offer the same VC next cycle instead of rotating past it (s7, s7.2).
+    cost of committing to one VC here:if this input loses stage 2, its other VCs are
+    hidden for the cycle, so the result is a matching but not always a maximal one.
+    Characterised and measured in tb_switch_allocator phase 3b and the efficiency report.
+  */
 
-  // Stage 2: one NUM_PORTS-way arbiter per output. Every stage-2 grant is final, so the
-  // arbiter consumes its own grant and issue[o] is both its enable and its valid (s7.2).
-  for (genvar o = 0; o < NUM_PORTS; o++) begin : g_out
-    for (genvar p = 0; p < NUM_PORTS; p++) begin : g_req
-      assign s2_req[o][p]     = s1_pick_vld[p] && (s1_pick_port[p] == PORT_W'(o)); // codes >= NUM_PORTS match no output
-      assign xbar_sel_t[p][o] = xbar_sel[o][p];
+  //STAGE 1
+  for (genvar p = 0; p < NUM_PORTS; p++) 
+    begin : g_input
+      rr_arbiter #(
+        .N(NUM_VCS)
+      ) u_vc_arbiter (
+        .clk(clk),
+        .rst_n(rst_n),
+        .req(sa_req[p]),
+        .en(input_won[p]),
+        .grant(selected_vc[p]),
+        .grant_idx(selected_vc_index[p]),
+        .grant_vld(selected_vc_valid[p])
+      );
+
+      assign selected_out_port[p] = sa_out_port[p][selected_vc_index[p]];
+      assign input_won[p] = |xbar_sel_by_input[p];
+      assign sa_grant[p] = input_won[p]? selected_vc[p] : '0;
     end
+  /*
+    Stage 2:one NUM_PORTS-way arbiter per output picks at most one input.
+    Every stage-2 grant is final.The arbiter consumes its own grant and issue[o]
+    which serve as both its enable and its valid (s7.2).
+  */
+  for (genvar o = 0; o < NUM_PORTS; o++) 
+    begin : g_output
+      for (genvar p = 0; p < NUM_PORTS; p++)
+        begin : g_request
+          assign output_requests[o][p] = selected_vc_valid[p] && (selected_out_port[p] == PORT_W'(o));
+          assign xbar_sel_by_input[p][o] = xbar_sel[o][p];
+        end
 
-    /* verilator lint_off UNUSEDSIGNAL */
-    logic [P_IW-1:0] s2_pick_idx;                                     // xbar_sel is onehot0; kept for waveform debug only
-    /* verilator lint_on UNUSEDSIGNAL */
+      /* verilator lint_off UNUSEDSIGNAL */
+      logic [PORT_INDEX_W-1:0] granted_input_index;//xbar_sel is onehot0for waveform debug only
+      /* verilator lint_on UNUSEDSIGNAL */
 
-    rr_arbiter #(.N(NUM_PORTS)) u_s2 (
-      .clk       (clk),
-      .rst_n     (rst_n),
-      .req       (s2_req[o]),
-      .en        (issue[o]),
-      .grant     (xbar_sel[o]),
-      .grant_idx (s2_pick_idx),
-      .grant_vld (issue[o])                                           // |s2_req[o] == |xbar_sel[o]
-    );
-  end
+      rr_arbiter #(
+        .N(NUM_PORTS)
+      ) u_input_arbiter (
+        .clk(clk),
+        .rst_n(rst_n),
+        .req(output_requests[o]),
+        .en(issue[o]),
+        .grant(xbar_sel[o]),
+        .grant_idx(granted_input_index),
+        .grant_vld(issue[o])                                             // |output_requests[o] == |xbar_sel[o]
+      );
+    end
 
 endmodule
 
