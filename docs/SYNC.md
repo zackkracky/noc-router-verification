@@ -247,3 +247,33 @@ Validation of this review revision (Verilator 5.020, --assert):
 - In isolated copies, `credit_out = rst_n && rd_ready` was caught by tb_fifo_empty_read, and a one-bit error in flit_pkt.pack() was caught by tb_flit_if. Mutants were never applied to the PR sources.
 - This environment used local C++ precompiled-header include overrides to work around its compiler; no repository compiler/simulator settings were changed for that workaround.
 - Attach logs/summary.txt (or the new CI run link after pushing) to PR #18 before merge. Local results are not a claim that the new CI revision has already run.
+
+## 2026-10-25 (async, Arnav)
+
+Done:
+- Reviewed `main` after PR #18 (`7df0cca`) and PR #19 (`75d83f2`). **Gate 1 is met**: driver, framing/credit monitor and `tb_fifo_link` are on `main` with P01-P06 bound; `tb_flit_if` and `tb_fifo_empty_read` landed with them. Tests on `main` go 4 to 7; CI runs `make check SEEDS="1 2 3 4 5"` plus `make neg`.
+- `rtl/back/switch_allocator.sv` (92 lines) and `tb/tests/tb_switch_allocator.sv` (467 lines) with `tb_switch_allocator.f`, on `arnav/rtl-back-switch-allocator`. Input-first separable allocation: stage 1 is one `rr_arbiter #(.N(NUM_VCS))` per input, stage 2 one `rr_arbiter #(.N(NUM_PORTS))` per output, both from the merged arbiter. Stage 1 drives `en = input_won[p]` (final grant only, s7.2 T7), stage 2 drives `en = issue[o]`.
+- Testbench runs NUM_VCS = 1, 2, 3, 4 in one simulation, each with an independent reference model plus model-free s7 contract checks (onehot0 per input and per output, `issue == |xbar_sel[o]`, grant subset of `sa_req`, grant at `o == sa_out_port[p][v]`). Eight phases: reset, exhaustive (input,VC,output) sweep, stage-2-loss pointer hold, stage-1 commitment characterisation, fairness, starvation bound, out-of-range route, and a 20000-cycle random phase with random resets. Phases 3 and 3b need at least two VCs and are skipped at NUM_VCS = 1.
+
+Validation (Verilator 5.020, `--assert`, the CI version):
+- Branch alone (forks from `3ea9243`, before #18): `make check SEEDS="1 2 3 4 5"` 30/30 PASS, five tests with one warning-fatal lint run and five seeds each.
+- Same RTL and TB on top of `75d83f2` (code only, scratch merge): `make check SEEDS="1 2 3 4 5"` 48/48 PASS and `make neg` 2/2 PASS.
+- The branch's own `STATE.md` and `SYNC.md` conflict with the #18 and #19 doc changes; the code does not. This entry and the matching STATE replace them in a docs-only change off `75d83f2`.
+- Not run: Verilator 5.032 (local) and Xcelium.
+- Measured per NUM_VCS, seed 1: starvation max wait 4 / 9 / 13 / 14 against the bound `N_SA = NUM_VCS*NUM_PORTS-1` = 4 / 9 / 14 / 19; allocation efficiency (grants / maximum bipartite matching) 1.0000 / 0.9136 / 0.8345 / 0.7795.
+
+Planned:
+- Rebase `arnav/rtl-back-switch-allocator` onto `75d83f2`, drop its `docs/` edits, and open the `switch_allocator` PR (RTL and TB only).
+- `router_top` skeleton by 31 Oct; `crossbar` 1 Nov; `output_unit` 2 Nov.
+- 26 Oct lab session: first `xrun` of `tb_noc_pkg`, `tb_fifo`, `tb_rr_arbiter`, `tb_switch_allocator`, plus Sachin's three new tests and the `FLIT_IF_CLOCKING` probe. `tb_switch_allocator` is the first test to use `$countones` and a recursive function (`mm_aug`), so it is the one most likely to need a change under `xrun`.
+- Collect semester 5 mid-sem 2 and all semester 6 dates at the same session.
+
+Blocked:
+- `rtl/front/route_unit.sv` was due 24 Oct and is not started on any branch. `input_port` and `vc_allocator` are due 31 Oct and depend on it. Revanth to confirm a date; if route_unit is not on `main` by 28 Oct, `router_top` lands as a skeleton with the front half stubbed.
+- Semester 5 mid-sem 2 date and all semester 6 dates. A mid-sem 2 on or before 2 Nov pulls the blackout start forward and collapses the 26 Oct - 2 Nov week to document collection.
+- JasperGold seat confirmation; logins requested 26-28 Oct.
+
+Decisions and notes for everyone:
+- **Stage-1 commitment loss is a measured property of this allocator, not a bug.** One VC per input is offered to stage 2 each cycle, so an input that loses stage 2 hides its other VCs for that cycle and the result is a valid matching but not always a maximal one. Phase 3b pins the directed case (in0 VC0 to out2; in1 VC0 to out2, VC1 to out3: one grant against a maximum matching of 2) and phase 7 measures the loss. A masked second iteration is the fix and is a Phase 3 candidate, not Phase 1 scope.
+- The starvation bound `N_SA = NUM_VCS*NUM_PORTS-1` is **measured, not proven**, and it is tight only at NUM_VCS <= 2 (4/4 and 9/9); at 3 and 4 the measured waits sit below it. Aashish: the A-series property needs the bounded `##[0:N_SA]` form, and the unbounded `s_eventually` form belongs to formal.
+- Out-of-range route codes (`PORT_W` carries 8 codes, only 5 are outputs) yield no grant and block that input. That is safe but it is not a contract guarantee; it needs an assume in `formal/assume.sv`, and `vc_allocator` and `route_unit` must never emit one.
