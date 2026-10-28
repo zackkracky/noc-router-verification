@@ -51,7 +51,7 @@ PM-001 (found 2026-10-14 by P06 with `bind_all`): `input_fifo.credit_out` was re
 | Simulator and formal-tool decision | Xcelium and Jasper Gold | Aashish, Arnav |
 | Toolchain versions in SYNC.md | 3/4 (Arnav, Sachin, Aashish) | all |
 
-Counters: RTL modules 3/10 on `main` (`input_fifo`, `rr_arbiter`, `switch_allocator`; + `noc_pkg`). Tests on `main` 8 (`tb_smoke`, `tb_noc_pkg`, `tb_fifo`, `tb_rr_arbiter`, `tb_flit_if`, `tb_fifo_link`, `tb_fifo_empty_read`, `tb_switch_allocator`). SVA 6/52 on `main`, run in CI (P01-P06); plan v2 finalised; 40 is the Phase 2 floor. Coverage n/a. Bugs logged 0 counted (TP-001 tool-portability 28 Oct JasperGold, kept in its own BUG_LOG section, not counted; PM-001 pre-merge, not counted). Paper draft none; PAPER_PLAN v1.0 and VENUES v2 frozen.
+Counters: RTL modules 3/10 on `main` (`input_fifo`, `rr_arbiter`, `switch_allocator`; + `noc_pkg`). Tests on `main` 8 (`tb_smoke`, `tb_noc_pkg`, `tb_fifo`, `tb_rr_arbiter`, `tb_flit_if`, `tb_fifo_link`, `tb_fifo_empty_read`, `tb_switch_allocator`). SVA 6/52 on `main`, run in CI (P01-P06); plan v2 finalised; 40 is the Phase 2 floor. Coverage n/a. Bugs logged 0 counted (`B-nnn` floor is 2 by 28 Feb). Records in `docs/bugs/`: PM-001 pre-merge CLOSED, TP-001 portability FIXED pending a clean `analyze`. Neither counts. Paper draft none; PAPER_PLAN v1.0 and VENUES v2 frozen.
 
 ## Lab qualification, 28 Oct 2026 (xrun 22.09-s003, Jasper 2022.09p001, `main` @ `08c0fdf`)
 - Xcelium: all 8 tests, lint + seeds 1-5, 48/48 PASS (`logs/summary.txt` from the lab run). `tb_switch_allocator` needed no change.
