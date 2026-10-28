@@ -5,10 +5,10 @@ module rr_arbiter #(
   parameter int N     = 5,
   parameter int IDX_W = (N > 1) ? $clog2(N) : 1 // index width
 ) (
-  input  logic             clk,
-  input  logic             rst_n,// sync, active-low
-  input  logic [N-1:0]     req,
-  input  logic             en,// grant consumed: rotate priority
+  input  wire logic             clk,
+  input  wire logic             rst_n,// sync, active-low
+  input  wire logic [N-1:0]     req,
+  input  wire logic             en,// grant consumed: rotate priority
   output logic [N-1:0]     grant,// one-hot or zero
   output logic [IDX_W-1:0] grant_idx,
   output logic             grant_vld
