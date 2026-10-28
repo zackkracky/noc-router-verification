@@ -1,0 +1,32 @@
+% # fifo.tcl: JasperGold run of fifo_sva (P01-P06) on input_fifo; P01/P02 become assumes via FORMAL
+% clear -all
+INFO (IPF121): Cleared environment completely for new design analysis.
+% 
+% analyze -sv12 +define+FORMAL \
+  rtl/front/input_fifo.sv \
+  tb/sva/fifo_sva.sv \
+  tb/sva/bind_all.sv                    ;# same sources as tb/tests/tb_fifo.f, minus the test
+[-- (VERI-1482)] Analyzing Verilog file '<tool-install>/jasper/lib/verilog/packages/std/std.sv' into library 'std'
+[-- (VERI-1482)] Analyzing Verilog file 'rtl/front/input_fifo.sv'
+[ERROR (VERI-1906)] rtl/front/input_fifo.sv(8): net type must be explicitly specified for 'clk' when default_nettype is none
+[ERROR (VERI-1906)] rtl/front/input_fifo.sv(9): net type must be explicitly specified for 'rst_n' when default_nettype is none
+[ERROR (VERI-1906)] rtl/front/input_fifo.sv(11): net type must be explicitly specified for 'wr_valid' when default_nettype is none
+[ERROR (VERI-1906)] rtl/front/input_fifo.sv(12): net type must be explicitly specified for 'wr_data' when default_nettype is none
+[ERROR (VERI-1906)] rtl/front/input_fifo.sv(14): net type must be explicitly specified for 'rd_ready' when default_nettype is none
+[ERROR (VERI-1072)] rtl/front/input_fifo.sv(153): module 'input_fifo' is ignored due to previous errors
+Summary of errors detected:
+	[ERROR (VERI-1906)] rtl/front/input_fifo.sv(8): net type must be explicitly specified for 'clk' when default_nettype is none
+	[ERROR (VERI-1906)] rtl/front/input_fifo.sv(9): net type must be explicitly specified for 'rst_n' when default_nettype is none
+	[ERROR (VERI-1906)] rtl/front/input_fifo.sv(11): net type must be explicitly specified for 'wr_valid' when default_nettype is none
+	[ERROR (VERI-1906)] rtl/front/input_fifo.sv(12): net type must be explicitly specified for 'wr_data' when default_nettype is none
+	[ERROR (VERI-1906)] rtl/front/input_fifo.sv(14): net type must be explicitly specified for 'rd_ready' when default_nettype is none
+	[ERROR (VERI-1072)] rtl/front/input_fifo.sv(153): module 'input_fifo' is ignored due to previous errors
+ERROR (ENL034): 6 errors detected in the design file(s).
+
+ERROR: problem encountered at line 4 in file formal/fifo.tcl
+
+% INFO (IPL005): Received request to exit from the console.
+INFO (IPL018): The peak resident set memory use for this session was 0.000 GB.
+INFO (IPL014): Waiting for the Tcl-thread to exit.
+INFO (IPL015): The Tcl-thread exited with status 1.
+INFO (IPL016): Exiting the analysis session with status 1.
