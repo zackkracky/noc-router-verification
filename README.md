@@ -4,9 +4,9 @@
 
 Parameterized 5-port wormhole NoC router (virtual channels, XY routing, round-robin switch allocation, credit-based flow control) and a SystemVerilog verification environment being built around it. Planned: constrained-random traffic with a reference-model scoreboard, a 52-property SVA library, functional coverage, and JasperGold proofs of the safety properties. The verification methodology is the contribution; the router is the vehicle. The planned paper will compare which bug classes constrained-random simulation, SVA in simulation and formal each catch, using 37 mutants in 7 classes.
 
-On `main` today (Phase 1): `noc_pkg`, `input_fifo` and `rr_arbiter` unit-tested with CI green; FIFO properties P01-P06 bound and passing in CI; the 52-property plan in `tb/sva/PLAN.md`; one property-caught pre-merge defect (PM-001) in `docs/BUG_LOG.md`. The scoreboard, coverage model and formal runs are Phase 2 (Jan-Feb 2027); `tb/cov/` and `formal/` do not exist yet.
+On `main` today (Phase 1): `noc_pkg`, `input_fifo`, `rr_arbiter` and `switch_allocator` unit-tested with CI green; FIFO properties P01-P06 bound and passing in CI; the finalised 52-property plan (v2) in `tb/sva/PLAN.md`; one JasperGold-found tool-portability finding (TP-001, not counted) and one property-caught pre-merge defect (PM-001) in `docs/BUG_LOG.md`. All eight tests qualified on Xcelium 28 Oct 2026 (lint + seeds 1-5 green). The scoreboard, coverage model and formal proofs are Phase 2 (Jan-Feb 2027); `formal/fifo.tcl` is the JasperGold entry point, `tb/cov/` does not exist yet.
 
-Guide: Prof. P. Anuradha, CBIT. Target: DVCon India 2027.
+Guide: Prof. P. Anuradha, CBIT.
 
 Current phase, gate status, open bugs and counters: `docs/STATE.md`. Weekly history: `docs/SYNC.md`.
 
@@ -32,7 +32,7 @@ make lint TEST=tb_noc_pkg
 make sim  TEST=tb_noc_pkg SEED=1
 make sim  TEST=tb_noc_pkg SEED=1 WAVES=1   # dumps logs/tb_noc_pkg_s1.fst
 make waves TEST=tb_noc_pkg SEED=1          # opens it in GTKWave
-make check SEEDS="1 2 3 4 5"               # seven tests: 42 checks; logs/summary.txt
+make check SEEDS="1 2 3 4 5"               # eight tests: 48 checks; logs/summary.txt
 make neg                                   # two expected failures; logs/negative-summary.txt
 make clean
 ```
@@ -62,14 +62,14 @@ Filelist resolution: `tb/tests/<TEST>.f` if it exists, else `filelist.f`; `FILEL
 | `rtl/pkg/` | `noc_pkg.sv`: constants, enums, 30-bit `hdr_t`, `vc_w()` / `cnt_w()` helpers | Revanth |
 | `rtl/front/` | input side: FIFOs, routing, input port, VC allocator | Arnav |
 | `rtl/back/` | output side: arbiter, switch allocator, crossbar, output units, `router_top` | Revanth |
-| `tb/env/` | PR #18 adds `flit_if`, `flit_pkt`, driver and monitor; scoreboard, generator and env are planned | Aashish |
+| `tb/env/` | `flit_if`, `flit_pkt`, driver and monitor (#18); scoreboard, generator and env are planned | Aashish |
 | `tb/tests/` | one `tb_<name>.sv` plus `tb_<name>.f` per test; `waves/` holds a `.gtkw` per test | Aashish |
 | `tb/sva/` | `PLAN.md` (52 properties), one `<block>_sva.sv` per block, `bind_all.sv` (only place SVA attaches) | Sachin |
 | `scripts/` | planned: `regress.sh`, `cov_merge.py`, `mutate.py` (Phase 2) | Arnav |
 | `docs/` | `INTERFACE.md`, `STATE.md`, `SYNC.md`, `BUG_LOG.md`, `wavedrom/` timing diagrams, `figures/` | Aashish |
 | `docs/wavedrom/` | `head_pipeline.json`, `credit_stall.json` and rendered PNGs; the timing reference for INTERFACE.md s5 | Aashish |
 
-`tb/cov/`, `formal/`, `fpga/`, `docs/paper/` are added by PR when their first file exists (Phase 2, Phase 2, Phase 3, Mar 2027).
+`tb/cov/`, `fpga/`, `docs/paper/` are added by PR when their first file exists (Phase 2, Phase 3, Mar 2027). `formal/` holds the JasperGold Tcl per block (`fifo.tcl` first); proofs themselves are Phase 2.
 
 ## Parameters
 
@@ -103,14 +103,14 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, registered credit return, SA request | planned |
 | `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
 | `rr_arbiter` | `rtl/back/rr_arbiter.sv` | Arnav | masked-priority round-robin arbiter, one-hot grant; one module for SA stage 1, SA stage 2 and VA (INTERFACE.md s7.2) | unit-tested (`tb_rr_arbiter`, #16) |
-| `switch_allocator` | `rtl/back/switch_allocator.sv` | Arnav | separable input-first SA, re-arbitrated every cycle | planned |
+| `switch_allocator` | `rtl/back/switch_allocator.sv` | Arnav | separable input-first SA, re-arbitrated every cycle; two `rr_arbiter` stages | unit-tested (`tb_switch_allocator`, #20); 7/7 mutants killed |
 | `crossbar` | `rtl/back/crossbar.sv` | Arnav | 5x5 flit mux selected by stage-2 grant | planned |
 | `output_unit` | `rtl/back/output_unit.sv` | Arnav | output register, per-VC credit counter (credits only, no ownership) | planned |
 | `router_top` | `rtl/back/router_top.sv` | Arnav | 5 input ports, VA, SA, crossbar, 5 output units | planned |
 
 Status values: planned, skeleton, unit-tested, integrated. "unit-tested" means lint clean and passing on `main`.
 
-SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` by `make check` and CI (#17). Link environment proposed in PR #18: `flit_if`, `flit_pkt`, `flit_driver`, `flit_monitor`; tests `tb_flit_if`, `tb_fifo_link`.
+SVA on `main`: `tb/sva/fifo_sva.sv` P01-P06 bound to `input_fifo` by `bind_all.sv`, run in `tb_fifo` and `tb_fifo_link` by `make check` and CI (#17, #18). The property plan is finalised: `tb/sva/PLAN.md` v2, 52 properties (P01-P06 + V07-V15, S01-S08, R01-R14, A01-A15), 40 passing with a registered mutant kill each is the Phase 2 exit floor. Link environment on `main` (#18): `flit_if`, `flit_pkt`, `flit_driver`, `flit_monitor`; tests `tb_flit_if`, `tb_fifo_link`, `tb_fifo_empty_read`.
 
 ## Phase 1a link environment
 
@@ -130,7 +130,7 @@ Checked by `make lint` (`-Wall`, zero warnings on RTL, warnings fatal; never `-W
 4. Header comment, one line: purpose and interface. Comments are short and trail the line: `// something`. No block comments above every line.
 5. Reset: synchronous, active-low `rst_n`, inside `always_ff @(posedge clk)` with `if (!rst_n)` first. One reset style for the whole design; this is it.
 6. `always_comb` for all combinational logic, `always_ff` for all registers. No `always @*`, no `always @(posedge clk)` in RTL, no `initial` in RTL, no latches, no `#` delays in RTL.
-7. `logic` everywhere. No `reg`, `wire`, `integer`. Loop indices `int unsigned` in `for` inside `always_comb`.
+7. `logic` for every internal signal and output (`output logic` is a variable). Input ports are `input wire logic`: under `` `default_nettype none `` an ANSI `input logic` leaves the port KIND to the default net type (1800-2017 s23.2.2.3) — Xcelium only warns (NODNTW), JasperGold errors (VERI-1906, TP-001). No `reg`, no bare `wire` declarations, no `integer`. Loop indices `int unsigned` in `for` inside `always_comb`.
 8. State machines: `typedef enum logic [N-1:0] {...} state_e;` with named states; next-state logic in `always_comb`, state register in `always_ff`; every `case` has a `default:`.
 9. Widths from `noc_pkg::vc_w()` / `cnt_w()` or `$clog2()`, never hardcoded. No implicit truncation: Verilator `WIDTH` must be clean. Also clean: `UNUSED`, `LATCH`, `BLKSEQ`, `CASEINCOMPLETE`. The only permitted `UNUSEDSIGNAL` waiver is the two reserved WF ports in `route_unit` (INTERFACE.md s3).
 10. Port order: `clk`, `rst_n`, inputs, outputs. One port per line. Parameters before ports, defaults stated.
@@ -150,11 +150,11 @@ module input_fifo
   parameter int unsigned DEPTH = DEF_BUFFER_DEPTH,   // 2, 4, 8
   parameter int unsigned WIDTH = DEF_FLIT_WIDTH
 ) (
-  input  logic             clk,
-  input  logic             rst_n,                    // sync, active-low
-  input  logic             wr_valid,
-  input  logic [WIDTH-1:0] wr_data,
-  input  logic             rd_ready,
+  input  wire logic             clk,
+  input  wire logic             rst_n,               // sync, active-low
+  input  wire logic             wr_valid,
+  input  wire logic [WIDTH-1:0] wr_data,
+  input  wire logic             rd_ready,
   output logic             rd_valid,
   output logic [WIDTH-1:0] rd_data,
   output logic [cnt_w(DEPTH)-1:0] count,
@@ -292,8 +292,8 @@ If a rule here disagrees with `docs/STATE.md`, this section wins for process and
 | Verilator 5.020+ | everyone, WSL2 | lint, simulation, CI; `--assert` supports `##[0:N]` (T4 probe passed) |
 | Icarus 12 | everyone | fallback simulation |
 | GTKWave | everyone | `make waves` |
-| Xcelium | college lab | `SIM=xcelium` cross-check of every unit test |
-| JasperGold | college lab | Phase 2 formal on safety properties (lab logins requested Oct 2026; no proofs run yet) |
+| Xcelium | college lab | `SIM=xcelium` cross-check; qualified 28 Oct 2026 (xrun 22.09-s003): all 8 tests lint + seeds 1-5 green, `FLIT_IF_CLOCKING` probe passed (clocking blocks stay) |
+| JasperGold | college lab | Phase 2 formal on safety properties; Jasper 2022.09 licensed and working 28 Oct 2026. First `analyze` found TP-001 (input port net kind); `formal/fifo.tcl` is the entry point, proofs pending the TP-001 fix |
 
 Liveness properties use `##[0:N]` in simulation and `s_eventually` under `` `ifdef FORMAL ``.
 
