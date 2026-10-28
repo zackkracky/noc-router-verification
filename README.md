@@ -175,7 +175,7 @@ This section is the process reference for the repo. Rules marked (enforced) are 
 
 1. Never push to `main`. Branch, PR, one review, squash merge. (enforced)
 2. Commit title `<scope>: what changed`, under 72 characters, imperative.
-3. No RTL without a test. No bug fix without the check that catches it and a `docs/BUG_LOG.md` row.
+3. No RTL without a test. No bug fix without the check that catches it, a `docs/bugs/<ID>.md` record and an index row.
 4. `make lint && make sim` green locally before the PR is marked ready.
 5. Rebase, `--force-with-lease`, never `--force`. Only on your own branch.
 6. Review within 24 h. Pull and run before approving RTL.
@@ -207,7 +207,7 @@ This section is the process reference for the repo. Rules marked (enforced) are 
 |---|---|
 | New RTL module or interface | directed `tb/tests/tb_<name>.sv` + `.f` exercising every port; Modules table here and `docs/INTERFACE.md` updated in the same PR |
 | RTL behavior change | updated or new test that fails on the old RTL |
-| Bug fix | catching property or test, plus a `docs/BUG_LOG.md` row (id, date, found by + seed, symptom, root cause, fix, catching check). Counted only if the bug was in merged RTL; branch findings go under "Pre-merge findings" as `PM-nnn` |
+| Bug fix | catching property or test that fails on the pre-fix RTL, plus a `docs/bugs/<ID>.md` record (all fields, including escape analysis and collateral sweep) and an index row in `docs/BUG_LOG.md`. Closure sign-off is by someone other than the fix author. Counted only if the defect was in merged RTL (`B-nnn`); branch catches are `PM-nnn`, cross-tool findings `TP-nnn` |
 | New SVA property | name, one-line intent, clock/reset, group (protocol / safety / liveness), row in `tb/sva/PLAN.md`; liveness gets a bounded `##[0:N]` form |
 | New covergroup | named bins, explicit crosses, comment listing bins expected unreachable and why |
 | Parameter change | default stated, at least one test at a non-default value |
@@ -281,7 +281,8 @@ If a rule here disagrees with `docs/STATE.md`, this section wins for process and
 | `docs/INTERFACE.md` | parameters, flit layout, route contract, link handshake, credits, front/back boundary, reset. On `main` as spec-v1 candidate; all four sign-off lines must name the same commit before `spec-v1` is tagged | Sachin |
 | `docs/STATE.md` | single snapshot: phase, next gate, open bugs, per-item status, counters | Arnav |
 | `docs/SYNC.md` | append-only weekly sync: done / planned / blocked / decisions per person | each member |
-| `docs/BUG_LOG.md` | counted bugs (merged RTL) and pre-merge findings: id, found by, symptom, root cause, fix, catching check | fix PR author |
+| `docs/BUG_LOG.md` | index and metrics: one row per defect, severity/priority/class, status, found-by counts, discovery curve | fix PR author |
+| `docs/bugs/` | one record per defect from `TEMPLATE.md`: symptom, repro, root cause, fix, escape analysis, collateral sweep, closure sign-off | fix PR author |
 | `tb/sva/PLAN.md` | 52 named properties (`P01`-`P06` FIFO, then owner-prefixed `V`, `S`, `R`, `A`); group, owner, status; starvation bound N=48 | Aashish |
 | `docs/wavedrom/` | head-flit pipeline and credit-stall timing, JSON and PNG | Sachin |
 

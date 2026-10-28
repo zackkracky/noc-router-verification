@@ -21,7 +21,7 @@ Open: P01-P06 have **no** JasperGold proof. The first proof row lands only after
 
 ## R2. Unit-level mutation kills
 
-Injected mutants only. Real RTL bugs live in `docs/BUG_LOG.md`; reviewers conflate the two if they share a table.
+Injected mutants only. Real defects live in `docs/BUG_LOG.md` and `docs/bugs/`; reviewers conflate the two if they share a table.
 
 | id | date | block | mutants | killed | killed by | commit | command |
 |---|---|---|---|---|---|---|---|
