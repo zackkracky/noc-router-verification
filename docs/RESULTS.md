@@ -13,7 +13,7 @@ Conventions:
 | id | date | tool + version | commit | command | result | raw log |
 |---|---|---|---|---|---|---|
 | Q-001 | 2026-10-28 | Xcelium `xrun` 22.09-s003 | `08c0fdf` | `make check SEEDS="1 2 3 4 5" SIM=xcelium` | 48/48 PASS: 8 tests x (lint + seeds 1-5) | in repo: `docs/qual/2026-10-28/xcelium-summary.txt`; full set A-001 |
-| Q-002 | 2026-10-28 | Xcelium `xrun` 22.09-s003 | `08c0fdf` | `make sim TEST=tb_fifo_link SEED=1 SIM=xcelium XRFLAGS="+define+FLIT_IF_CLOCKING"` | PASS on all four `(F,V,D)` configs; `@(link.cb)` accepted, so the opt-in clocking blocks stay | in repo: `docs/qual/2026-10-28/xcelium-clocking-probe.excerpt.log` |
+| Q-002 | 2026-10-28 | Xcelium `xrun` 22.09-s003 | `08c0fdf` | `make sim TEST=tb_fifo_link SEED=1 SIM=xcelium XRFLAGS=+define+FLIT_IF_CLOCKING` | PASS on all four `(F,V,D)` configs; `@(link.cb)` accepted, so the opt-in clocking blocks stay. Elaboration reports 18 clocking items, confirming the define was active. The original probe was run by hand: the Makefile had no define passthrough until `XRFLAGS` was added in the same PR, and the command above is the reproducible form | in repo: `docs/qual/2026-10-28/xcelium-clocking-probe.excerpt.log` |
 | Q-003 | 2026-10-28 | JasperGold (Jasper Apps) 2022.09p001 | `08c0fdf` | `jg -batch formal/fifo.tcl` | **FAIL at `analyze`**: VERI-1906 x5 on `input_fifo` input ports, VERI-1072 module ignored; 0 properties elaborated, 0 proven. Cause TP-001 (`docs/BUG_LOG.md`) | in repo: `docs/qual/2026-10-28/jasper-fifo-analyze.excerpt.log` |
 | Q-004 | 2026-10-28 | Verilator 5.020 | `08c0fdf` + TP-001 patch | `make check SEEDS="1 2 3"` then `make neg` | 32/32 PASS, `make neg` 2/2 PASS: the TP-001 fix is regression-neutral | not archived (reproducible locally) |
 

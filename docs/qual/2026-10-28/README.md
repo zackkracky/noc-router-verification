@@ -23,6 +23,6 @@ Reproduce (lab machine, from repo root; the lab shell behaves as csh, so use `|&
 
 ```
 make check SEEDS="1 2 3 4 5" SIM=xcelium
-make sim TEST=tb_fifo_link SEED=1 SIM=xcelium XRFLAGS="+define+FLIT_IF_CLOCKING"
+make sim TEST=tb_fifo_link SEED=1 SIM=xcelium XRFLAGS=+define+FLIT_IF_CLOCKING
 jg -batch formal/fifo.tcl
 ```
