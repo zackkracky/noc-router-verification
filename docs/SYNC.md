@@ -277,3 +277,67 @@ Decisions and notes for everyone:
 - **Stage-1 commitment loss is a measured property of this allocator, not a bug.** One VC per input is offered to stage 2 each cycle, so an input that loses stage 2 hides its other VCs for that cycle and the result is a valid matching but not always a maximal one. Phase 3b pins the directed case (in0 VC0 to out2; in1 VC0 to out2, VC1 to out3: one grant against a maximum matching of 2) and phase 7 measures the loss. A masked second iteration is the fix and is a Phase 3 candidate, not Phase 1 scope.
 - The starvation bound `N_SA = NUM_VCS*NUM_PORTS-1` is **measured, not proven**, and it is tight only at NUM_VCS <= 2 (4/4 and 9/9); at 3 and 4 the measured waits sit below it. Aashish: the A-series property needs the bounded `##[0:N_SA]` form, and the unbounded `s_eventually` form belongs to formal.
 - Out-of-range route codes (`PORT_W` carries 8 codes, only 5 are outputs) yield no grant and block that input. That is safe but it is not a contract guarantee; it needs an assume in `formal/assume.sv`, and `vc_allocator` and `route_unit` must never emit one.
+
+2026-10-30 (async, Arnav)
+
+Covers 26-30 Oct: the first lab session on Xcelium and JasperGold, PR #21 (arnav/formal-fifo-v3, 5 commits) and PR #22 (arnav/bug-log-format, 1 commit on top of #21). Neither is merged; main is still 08c0fdf.
+
+Done - lab qualification, 28 Oct (main at 08c0fdf):
+
+Xcelium xrun 22.09-s003: all 8 merged tests, lint plus seeds 1-5, 48/48 PASS. tb_switch_allocator needed no change under xrun; $countones and the recursive mm_aug are accepted as written.
+FLIT_IF_CLOCKING probe with @(link.cb): PASS on all four (F,V,D) configurations. Elaboration reports 18 clocking items, so the define was active. The optional clocking blocks stay; the 26 Oct conditional deletion does not apply.
+JasperGold (Jasper Apps 2022.09p001): licence and jasper_fao checkout work on the lab machine. The seat question from 25 Oct is closed.
+First jg -batch formal/fifo.tcl failed at analyze: VERI-1906 x5 on input_fifo input ports, then VERI-1072 and the module ignored, 6 errors, session dead at line 4 of the Tcl. Zero properties elaborated. No proof of P01-P06 has run and none may be claimed.
+Lab shell behaves as csh despite $SHELL; use |& tee, not 2>&1 | tee.
+
+Done - PR #21, arnav/formal-fifo-v3 (open, 5 commits, ~398 changed lines):
+
+TP-001 fix: input logic to input wire logic on 25 input ports in 5 files (input_fifo 5, rr_arbiter 4, switch_allocator 4, fifo_sva 9, flit_driver 3). Under `default_nettype none an ANSI input logic x has a data type but no net type, so the port kind falls back to the absent default net type (IEEE 1800-2017 s23.2.2.3). Verific enforces it; xmvlog only warns (NODNTW) and substitutes wire; Verilator 5.020 is silent at -Wall. Outputs are unaffected.
+The xrun NODNTW warnings, not a reading of rtl/, established the real scope. They are what put tb/env/flit_driver.sv in the set.
+formal/fifo.tcl committed: analyze, elaborate -top input_fifo, clock clk, reset -expression {!rst_n}, prove -all, report -summary. P01/P02 become assumes under +define+FORMAL.
+docs/RESULTS.md added. Every paper number traces to a row naming commit, command, tool version and where the log lives. Seeded with Q-001 to Q-004, the three mutation runs and the measured switch_allocator and rr_arbiter characterisation data.
+docs/qual/2026-10-28/ added: sanitized excerpts backing the Q rows, 94 lines over four files plus an index.
+Makefile: XRFLAGS= and VLFLAGS= passthrough, both defaulting empty. The clocking-probe command documented in RESULTS named a variable the Makefile did not have, so it was not runnable; the probe had been run by hand.
+.gitignore: xcelium_*/, xrun.history, xrun.key, *.shm/, jgproject/, plus !docs/qual/**/*.log so the curated excerpts are tracked.
+README: convention 7 and the module template now require input wire logic; Modules table updated for switch_allocator; venue target removed.
+
+Done - PR #22, arnav/bug-log-format (open, 1 commit on top of #21, 361 added / 42 removed):
+
+docs/BUG_LOG.md becomes an index plus metrics: one narrow row per defect with severity, priority, class, status, found-by, dates; counts by status and technique; a discovery-by-week curve.
+docs/bugs/TEMPLATE.md plus one record per defect. Seven sections: symptom, reproduce, root cause, fix, escape analysis, collateral sweep, closure.
+docs/bugs/PM-001.md and docs/bugs/TP-001.md migrated and expanded to the template.
+Status workflow NEW -> TRIAGED -> ASSIGNED -> FIXED -> VERIFIED -> CLOSED, with REOPENED, DEFERRED, DUPLICATE, NOT-A-BUG.
+README Process rules and docs/STATE.md updated to match.
+
+Validation (Verilator 5.020, the CI version):
+
+PR #21: make check SEEDS="1 2 3" 32/32 PASS, make neg 2/2 PASS. The port change is behaviour-neutral.
+PR #22 is docs-only; make check SEEDS="1" 16/16 PASS and every index link resolves.
+Not run: Xcelium and JasperGold against the fixed sources. Both PRs are Verilator-verified only.
+
+Planned:
+
+Merge #21, then rebase #22 onto main (git rebase --onto origin/main arnav/formal-fifo-v3 arnav/bug-log-format), since squash-merge rewrites #21's commits.
+Re-run jg -batch formal/fifo.tcl on the lab machine after #21 merges. That run closes TP-001 and produces the first proof row in RESULTS. Aashish signs section 7.
+router_top skeleton 31 Oct with the front half stubbed, crossbar 1 Nov, output_unit 2 Nov, scoreboard v1 2 Nov.
+Five applications submitted by 2 Nov. Blackout starts 3 Nov.
+
+Blocked:
+
+rtl/front/route_unit.sv was due 24 Oct and is on no branch as of 30 Oct. The 25 Oct fallback is now active: router_top lands as a skeleton with the front half stubbed. input_port and vc_allocator (31 Oct) are at risk (Revanth).
+TP-001 cannot close before the post-merge analyze re-run, so the formal half of Phase 2 has no evidence yet.
+Semester 5 mid-sem 2 and all semester 6 dates, still uncollected after the 28 Oct lab session.
+main is 08c0fdf; #21 needs a review that is not self-approval.
+
+Decisions and notes for everyone:
+
+Raw tool logs are never committed. Cadence logs carry a confidentiality and trade-secret banner and embed absolute lab paths including an account identifier, and this repository is public. Only redacted excerpts that back a specific RESULTS row go in docs/qual/<date>/; full logs stay in the off-repo archives named as A-001 and A-002.
+TP-001 is not a counted bug and never becomes one. It has no functional symptom in simulation. The counted floor stays at 0 of the 2 required by 28 Feb.
+Injected mutants stay out of the bug log. They live in docs/RESULTS.md R2. A reviewer who finds injected faults and real defects in one table discounts both.
+The verifier is never the owner. FIXED means merged; CLOSED means someone other than the fix author reproduced the original failure, confirmed the fix removes it, and signed the record. This is the cross-ownership rule applied to closure and it binds all four of us.
+A check that passed on broken RTL is a second defect and gets its own record. PM-001 is the case: t_fifo line 97 asserted the registered credit_out timing as correct, so the unit test certified the defect for the four days PR #13 was open.
+Bug IDs keep their B- / PM- / TP- prefixes and never change after a record is pushed; reclassification edits the counts toward exit field, not the ID.
+Severity and priority are separate fields. TP-001 is S4 and P1: cosmetic in simulation, blocking for all formal work.
+Class codes C1-C7 are provisional until Aashish checks them against PAPER_PLAN v1.0. They live in a field, not in the ID, so remapping is one PR.
+PM-001's fix is PR #13 (1fd956e), issue #11.the #11 in the commit subject is the issue.
+One front end is not verification. Lint and CI were green for weeks on source that was never legal SystemVerilog. Xcelium -elaborate on every merged test and analyze on each new block are now entry conditions, not optional lab extras.
