@@ -5,13 +5,13 @@ module input_fifo #(
     parameter int unsigned WIDTH = 64,
     parameter int unsigned DEPTH = 4
 ) (
-    input  logic             clk,
-    input  logic             rst_n,
+    input  wire logic             clk,
+    input  wire logic             rst_n,
 
-    input  logic             wr_valid,
-    input  logic [WIDTH-1:0] wr_data,
+    input  wire logic             wr_valid,
+    input  wire logic [WIDTH-1:0] wr_data,
 
-    input  logic             rd_ready,
+    input  wire logic             rd_ready,
 
     output logic             rd_valid,
     output logic [WIDTH-1:0] rd_data,

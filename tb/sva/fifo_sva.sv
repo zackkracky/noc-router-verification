@@ -4,15 +4,15 @@
 module fifo_sva #(
   parameter int unsigned DEPTH = 4                       // input_fifo.DEPTH; WIDTH not needed (no data properties)
 ) (
-  input  logic                         clk,
-  input  logic                         rst_n,
-  input  logic                         wr_valid,
-  input  logic                         rd_ready,
-  input  logic                         rd_valid,
-  input  logic [$clog2(DEPTH + 1)-1:0] count,            // same width as input_fifo.count
-  input  logic                         full,
-  input  logic                         empty,
-  input  logic                         credit_out
+  input  wire logic                         clk,
+  input  wire logic                         rst_n,
+  input  wire logic                         wr_valid,
+  input  wire logic                         rd_ready,
+  input  wire logic                         rd_valid,
+  input  wire logic [$clog2(DEPTH + 1)-1:0] count,            // same width as input_fifo.count
+  input  wire logic                         full,
+  input  wire logic                         empty,
+  input  wire logic                         credit_out
 );
 
   localparam int unsigned COUNT_W = $clog2(DEPTH + 1);

@@ -16,9 +16,12 @@ XR_LIB := xcelium_$(TEST)
 FILELIST ?= $(firstword $(wildcard tb/tests/$(TEST).f) filelist.f)
 SRCS := $(shell sed -e 's/#.*//' -e '/^[[:space:]]*$$/d' $(FILELIST) 2>/dev/null)
 
-VL := verilator --timing --assert --timescale 1ns/1ps --top-module $(TEST) -f $(FILELIST)
+VL := verilator --timing --assert --timescale 1ns/1ps --top-module $(TEST) -f $(FILELIST) $(VLFLAGS)
 XR := xrun -sv -timescale 1ns/1ps -top $(TEST) -f $(FILELIST) -svseed $(SEED) \
-      -xmlibdirname $(XR_LIB) -nocopyright
+      -xmlibdirname $(XR_LIB) -nocopyright $(XRFLAGS)
+
+XRFLAGS ?=
+VLFLAGS  ?=
 
 ifeq ($(WAVES),1)
 ifeq ($(SIM),xcelium)
@@ -45,6 +48,7 @@ help:
 	@echo "make sim      TEST=tb_noc_pkg WAVES=1        also dump logs/<test>_s<seed>.fst"
 	@echo "make waves    TEST=tb_noc_pkg SEED=1         open that dump in GTKWave"
 	@echo "make sim      TEST=tb_noc_pkg SIM=xcelium    same test on xrun (VCD if WAVES=1)"
+	@echo "make sim      TEST=tb_fifo_link XRFLAGS=+define+FLIT_IF_CLOCKING   extra tool flags (VLFLAGS= for verilator)"
 	@echo "make check    SEEDS=\"1 2 3\"                lint + sim every tb/tests/*.f, summary in logs/summary.txt (CI runs this)"
 	@echo "make neg                                  Verilator expected-fail framing and invalid-VC tests"
 	@echo "make regress | cov | formal                Phase 2"

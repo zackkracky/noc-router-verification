@@ -7,9 +7,9 @@ module flit_driver #(
   localparam int unsigned VC_W = noc_pkg::vc_w(NUM_VCS)
 )(
   flit_if.tx link,
-  input logic cmd_valid,
-  input logic [FLIT_WIDTH-1:0] cmd_flit,
-  input logic [VC_W-1:0] cmd_vc,
+  input wire logic cmd_valid,
+  input wire logic [FLIT_WIDTH-1:0] cmd_flit,
+  input wire logic [VC_W-1:0] cmd_vc,
   output logic cmd_ready,
   output int unsigned credits [NUM_VCS]
 );

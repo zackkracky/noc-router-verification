@@ -6,10 +6,10 @@ module switch_allocator
   #(
   parameter int unsigned NUM_VCS = DEF_NUM_VCS
   ) (
-  input  logic clk,
-  input  logic rst_n,
-  input  logic [NUM_PORTS-1:0][NUM_VCS-1:0] sa_req, //i/p active & FIFO not empty considering resp. credit availability.must not depend on a grant (s7)
-  input  logic [NUM_PORTS-1:0][NUM_VCS-1:0][PORT_W-1:0] sa_out_port, //held encoded route.caller guarantees < NUM_PORTS (s7, formal/assume.sv)
+  input  wire logic clk,
+  input  wire logic rst_n,
+  input  wire logic [NUM_PORTS-1:0][NUM_VCS-1:0] sa_req, //i/p active & FIFO not empty considering resp. credit availability.must not depend on a grant (s7)
+  input  wire logic [NUM_PORTS-1:0][NUM_VCS-1:0][PORT_W-1:0] sa_out_port, //held encoded route.caller guarantees < NUM_PORTS (s7, formal/assume.sv)
   output logic [NUM_PORTS-1:0][NUM_VCS-1:0] sa_grant, //onehot0 per input
   output logic [NUM_PORTS-1:0][NUM_PORTS-1:0] xbar_sel,
   output logic [NUM_PORTS-1:0] issue //status of i/p assigned to o/p
