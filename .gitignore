@@ -12,6 +12,8 @@ obj_*/
 #Logs
 *.log
 logs/
+# exception: curated, sanitized qualification evidence is tracked
+!docs/qual/**/*.log
 
 #Coverage OUTPUT(anchored to root; NOT tb/cov source)
 /cov/
@@ -33,3 +35,16 @@ __pycache__/
 
 #GTKWave: ignore stray, force-add curated layouts with `git add -f`
 *.gtkw
+# JasperGold session outputs
+jgproject/
+*.db
+
+# Xcelium scratch (make clean removes these; git must never see them)
+xcelium_*/
+xrun.history
+xrun.key
+*.shm/
+waves.shm/
+.simvision/
+*.trn
+*.dsn

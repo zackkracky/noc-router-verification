@@ -1,0 +1,9 @@
+Loading snapshot worklib.tb_fifo_link:sv .................... Done
+SVSEED set from command line: 1
+xmsim: *W,DSEM2009: This SystemVerilog design is simulated as per IEEE 1800-2009 SystemVerilog simulation semantics. Use -disable_sem2009 option for turning off SV 2009 simulation semantics.
+F=32 V=1 D=4 PASS: same=15 different=0 last=6
+F=32 V=2 D=2 PASS: same=10 different=1 last=38
+F=64 V=3 D=4 PASS: same=28 different=1 last=9
+F=128 V=4 D=8 PASS: same=42 different=1 last=11
+TEST PASSED
+Simulation complete via $finish(1) at time 9230 NS + 2
