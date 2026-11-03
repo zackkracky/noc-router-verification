@@ -126,8 +126,12 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | `output_unit` | `rtl/back/output_unit.sv` | Arnav | output register, per-VC credit counter (credits only, no ownership) | planned |
 =======
 | `crossbar` | `rtl/back/crossbar.sv` | Arnav | 5x5 flit mux selected by stage-2 grant | planned |
+<<<<<<< HEAD
 | `output_unit` | `rtl/back/output_unit.sv` | Arnav | output register, per-VC credit counter (credits only, no ownership); exports `ocredit_avail` and `ocredit_count` (INTERFACE.md s5.4, s7) | unit-tested (`tb_output_unit`, #25); 7/7 mutants killed |
 >>>>>>> 816c549 (credit: add output_unit with per-VC credit counters and model test)
+=======
+| `output_unit` | `rtl/back/output_unit.sv` | Arnav | output register, per-VC credit counter (credits only, no ownership); exports `ocredit_avail` and `ocredit_count` (INTERFACE.md s5.4, s7) | unit-tested (`tb_output_unit`, #30); 7/7 mutants killed |
+>>>>>>> f1bc2fa (Update output_unit test case reference in README)
 | `router_top` | `rtl/back/router_top.sv` | Arnav | 5 input ports, VA, SA, crossbar, 5 output units | planned |
 
 Status values: planned, skeleton, unit-tested, integrated. "unit-tested" means lint clean and passing on `main`.
