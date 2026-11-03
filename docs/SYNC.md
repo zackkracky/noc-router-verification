@@ -354,11 +354,11 @@ Done - back-half RTL, three PRs:
 
 Validation (Verilator 5.020, the CI version, on clean checkouts):
 
-- `make check SEEDS="1 2 3 4 5"`: #24 alone 54/54 across 9 tests, #25 alone 54/54 across 9, #26 with both 60/60 across 10. `make neg` 2/2 on each.
+- `make check SEEDS="1 2 3 4 5"`: #29 alone 54/54 across 9 tests, #30 alone 54/54 across 9, #31 with both 60/60 across 10. `make neg` 2/2 on each.
 - Mutation, run through `make sim` so the `TEST PASSED` grep is the gate: crossbar 5/5 (flit from the output index, select transposed, VC stuck at zero, VC from the output index, unselected output not cleared); output_unit 7/7 (reset depth off by one, send plus return decrementing, avail threshold off by one, register not reset, return ignoring the credit VC, register repeating a flit, issue debiting every VC). The exact before/after lines are in the PR descriptions and go into RESULTS.md as M-004 and M-005 once the PRs merge.
-- Not run: Xcelium, JasperGold, Verilator 5.032. Per the 30 Oct entry condition these are not lab-qualified until the next lab session.
+- Not run: Xcelium, JasperGold, Verilator 5.032. Per the 30 Oct entry condition, these are not lab-qualified until the next lab session.
 
-Done - documentation audit against code, Makefile, CI and history:
+Done - documentation audit against code, Makefile, CI, and history:
 
 - `make lint-rtl` now resolves submodules with `-y rtl/front -y rtl/back`; it failed on any file that instantiates another, including `switch_allocator.sv` on `main`.
 - RESULTS.md: every R2/R3 row was dated before the commit it cites existed (runs were on pre-squash branch commits). D-001, D-002, D-003 re-run on the cited commits: identical to the last digit. The M rows cannot be re-run because no mutant is recorded in the repository; noted in R2. Q-005 repeats Q-004 on the merged TP-001 fix `907433f`: 32/32, 2/2.
@@ -383,4 +383,4 @@ Blocked:
 
 Planned:
 
-- Nothing before 10 Dec. On resume: merge #24 and #25, rebase #26, add M-004 and M-005 to RESULTS.md, run the lab session.
+- Nothing before 10 Dec. On resume: merge #29 and #30, rebase #31, add M-004 and M-005 to RESULTS.md, run the lab session.
