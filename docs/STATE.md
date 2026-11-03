@@ -21,12 +21,12 @@ If Phase 1b cannot reach the 31 Dec exit from a 10 Dec start, scope is cut from 
 ## Open pull requests
 | PR | Branch | Content | Base | State |
 |---|---|---|---|---|
-| #24 | `arnav/crossbar` | `crossbar` + `tb_crossbar` | `main` | ready for review |
-| #25 | `arnav/output-unit` | `output_unit` + `tb_output_unit` | `main` | ready for review |
-| #26 | `arnav/router-top-skel` | `router_top` skeleton, lint-only | #24 + #25 | Draft until both merge, then rebase onto `main` |
-| #23 | `arnav/router-top` | superseded by #24-#26; does not elaborate | — | close and delete the branch |
+| #29 | `arnav/crossbar` | `crossbar` + `tb_crossbar` | `main` | ready for review |
+| #30 | `arnav/output-unit` | `output_unit` + `tb_output_unit` | `main` | ready for review |
+| #31 | `arnav/router-top-skel` | `router_top` skeleton, lint-only | #29 + #30 | Draft until both merge, then rebase onto `main` |
+| #23 | `arnav/router-top` | superseded by #29-#31; does not elaborate | — | close and delete the branch |
 
-#24 and #25 each touch one adjacent row of the README Modules table, so whichever merges second rebases with a one-line conflict.
+#29 and #30 each touch one adjacent row of the README Modules table, so whichever merges second rebases with a one-line conflict.
 
 ## Gate 1
 Met late on 2026-10-21 by PR #18 (`7df0cca`): `input_fifo` passing `tb_fifo`, P01-P06 bound and passing, driver/monitor and `tb_fifo_link` on `main`.
@@ -44,7 +44,7 @@ Met late on 2026-10-21 by PR #18 (`7df0cca`): `input_fifo` passing `tb_fifo`, P0
 | `rtl/front/input_fifo.sv` + `tb_fifo` | on `main` (#13); PM-001 fixed before merge | Revanth |
 | `rtl/back/rr_arbiter.sv` + `tb_rr_arbiter` | on `main` (#16); M-001 5/5 non-equivalent mutants; D-003 max wait N-1 at N = 1,2,3,4,5,8 | Arnav |
 | `rtl/back/switch_allocator.sv` + `tb_switch_allocator` | on `main` (#20), Xcelium-qualified 28 Oct; M-002 7/7; D-001 and D-002 re-verified 3 Nov on `08c0fdf` | Arnav |
-| `rtl/back/crossbar.sv` + `tb_crossbar` | PR #24. s7 names (`xbar_sel`, `xb_flit`, `xb_vc`, `issue_flit`, `issue_vc`); 4 parameter points, 2130 checks each; 5/5 mutants; not yet run under `xrun` | Arnav |
+| `rtl/back/crossbar.sv` + `tb_crossbar` | PR #29. s7 names (`xbar_sel`, `xb_flit`, `xb_vc`, `issue_flit`, `issue_vc`); 4 parameter points, 2130 checks each; 5/5 mutants; not yet run under `xrun` | Arnav |
 | `rtl/back/output_unit.sv` + `tb_output_unit` | PR #25. Credits only (T9); exports `ocredit_avail` and `ocredit_count` (T11); exact count vs model every cycle at 4 parameter points; 7/7 mutants; not yet run under `xrun` | Arnav |
 | `rtl/back/router_top.sv` | PR #26. s4 flat ports, back half wired, `input_port` x5 stubbed; lint-only at 4 parameter points | Arnav |
 | `rtl/front/route_unit.sv`, `input_port.sv`, `vc_allocator.sv` | not started on any branch | Revanth |
@@ -55,7 +55,7 @@ Met late on 2026-10-21 by PR #18 (`7df0cca`): `input_fifo` passing `tb_fifo`, P0
 | Formal | `formal/fifo.tcl` on `main`; TP-001 fix merged (#21); no `analyze` re-run yet, so no proof | Aashish, Arnav |
 | Toolchain versions in SYNC.md | 4/4 (22 Sep): Arnav 5.032, Revanth 5.024, Sachin 5.020, Aashish 5.024. Only Sachin matches CI | all |
 
-Counters: RTL modules on `main` 3 of 10 plus `noc_pkg` (`input_fifo`, `rr_arbiter`, `switch_allocator`); 6 of 10 with #24-#26 (`router_top` as a skeleton). Tests on `main` 8; 10 with #24-#25. SVA 6/52 on `main`, run in CI. Coverage n/a. Counted bugs (`B-nnn`) 0, floor 2 by 28 Feb. Records in `docs/bugs/`: PM-001 CLOSED, PM-002 FIXED pending verifier sign-off, TP-001 FIXED pending a clean `analyze`; none counts. Paper draft none; PAPER_PLAN v1.0 and VENUES v2 frozen.
+Counters: RTL modules on `main` 3 of 10 plus `noc_pkg` (`input_fifo`, `rr_arbiter`, `switch_allocator`); 6 of 10 with #29-#31 (`router_top` as a skeleton). Tests on `main` 8; 10 with #29-#30. SVA 6/52 on `main`, run in CI. Coverage n/a. Counted bugs (`B-nnn`) 0, floor 2 by 28 Feb. Records in `docs/bugs/`: PM-001 CLOSED, PM-002 FIXED pending verifier sign-off, TP-001 FIXED pending a clean `analyze`; none counts. Paper draft none; PAPER_PLAN v1.0 and VENUES v2 frozen.
 
 ## Lab qualification, 28 Oct 2026 (xrun 22.09-s003, Jasper 2022.09p001, `main` @ `08c0fdf`)
 - Xcelium: all 8 tests, lint + seeds 1-5, 48/48 PASS (Q-001). `tb_switch_allocator` needed no change.
