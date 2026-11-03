@@ -17,6 +17,8 @@ module xb_chk
 );
   localparam int unsigned VW = vc_w(NV);
 
+  int unsigned seed_v;
+  int          seed_r;
   logic [NUM_PORTS-1:0][NUM_PORTS-1:0] xbar_sel;
   logic [NUM_PORTS-1:0][FW-1:0]        xb_flit;
   logic [NUM_PORTS-1:0][VW-1:0]        xb_vc;
@@ -56,7 +58,9 @@ module xb_chk
     int src [NUM_PORTS];
     done = 1'b0; errs = 0; checks = 0;
     xbar_sel = '0; xb_flit = '0; xb_vc = '0;
-    void'($urandom(SEED));
+    if (!$value$plusargs("seed=%d", seed_v)) seed_v = 1;
+    seed_r = int'(seed_v * 1000 + SEED);//runtime seed x per-instance offset, as tb_switch_allocator
+    void'($urandom(seed_r));
     wait (start);
 
     //1. zero select: every output reads zero
@@ -105,7 +109,6 @@ module tb_crossbar;
   logic d1, d2, d3, d4;
   int   e1, e2, e3, e4;
   int   c1, c2, c3, c4;
-  int   seed;
 
   xb_chk #(.FW(64),  .NV(2), .SEED(1)) u_def  (.start(start), .done(d1), .errs(e1), .checks(c1));//defaults
   xb_chk #(.FW(32),  .NV(1), .SEED(2)) u_min  (.start(start), .done(d2), .errs(e2), .checks(c2));//narrowest, VC_W floor 1
@@ -113,8 +116,6 @@ module tb_crossbar;
   xb_chk #(.FW(64),  .NV(3), .SEED(4)) u_npo2 (.start(start), .done(d4), .errs(e4), .checks(c4));//non-power-of-2 VCs
 
   initial begin
-    if (!$value$plusargs("seed=%d", seed)) seed = 1;
-    void'($urandom(seed));
     #1 start = 1'b1;
     wait (d1 && d2 && d3 && d4);
     #1 $finish;//verdict printed in final
