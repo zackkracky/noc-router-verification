@@ -1,10 +1,10 @@
 # SystemVerilog Assertion (SVA) Master Verification Plan (v2)
 
 **Owner**: Aashish (V2 — DV Formal & Paper Editor)  
-**Date**: 21 Oct 2026  
+**Date**: 4 Nov 2026
 **Applicability**: 5-port parameterized Virtual-Channel NoC Router (`noc-router-verification`)  
 **Status**: **52 planned, 40 passing is the Phase 2 exit floor. Current: 6/52 written, bound and passing in CI (P01–P06 on `tb_fifo`, seeds 1–3).**  
-**Simulation Bound**: Starvation bound $N = 48$ cycles (`##[0:N]`). Formal unbounded form uses `s_eventually`.
+**Simulation bounds**: Per-property bounds and assumptions are defined below. `N_SA = NUM_VCS*NUM_PORTS-1` is a measured SA candidate, not a proven universal bound. VA and system-progress bounds remain to be derived; 48 cycles is only a provisional smoke-test budget. Formal unbounded liveness uses `s_eventually` with explicit progress assumptions.
 
 ---
 
@@ -26,18 +26,18 @@ IDs: `P01`–`P06` are the Gate-1 FIFO IDs fixed by `docs/INTERFACE.md` s6 and u
 * **`V07` (`reset_quiescence`)**: Evaluates that on the cycle following reset release, all control valids, requests, and grants are deasserted, and credit counters match `BUFFER_DEPTH`.
 * **`V08` (`no_flit_lost`)**: End-to-end scoreboard invariant verifying that every packet/flit admitted into the router is eventually egressed with identical payload fields (0 packet dropping).
 * **`V09` (`no_reorder_per_vc`)**: End-to-end scoreboard invariant ensuring flits belonging to the same packet and stream within any given virtual channel maintain strict FIFO order.
-* **`V10` (`sa_starve_bound`)**: Bounded liveness asserting that an active switch request with available downstream credits receives a grant within $N \le 48$ cycles under fair arbitration.
-* **`V11` (`va_bound_when_free`)**: Bounded liveness asserting that a packet waiting in `WAIT_VC` targeting an idle output VC receives that VC allocation within $N \le 48$ cycles.
+* **`V10` (`sa_starve_bound`)**: Integration-level companion to R09: check persistent SA eligibility against the candidate `N_SA = NUM_VCS*NUM_PORTS-1` bound. Requires a request held until grant, stable route and allocated VC, continuous downstream credit, and the declared contention profile. D-001 measured waits 4/9/13/14 against candidate bounds 4/9/14/19 for NUM_VCS 1/2/3/4; it is not a proof for arbitrary traffic. Do not count this property toward the exit floor until its assumptions and a killing mutant are registered.
+* **`V11` (`va_bound_when_free`)**: A persistent WAIT_VC request targeting an eligible free output VC must receive allocation within `N_VA`. Derive `N_VA` from the implemented VA arbitration and tie-breaking policy, number of contenders, and sustained resource availability. The switch-allocator measurement D-001 does not establish this bound. Until VA exists, `N_VA` is unresolved; 48 is a smoke-test budget only, not an acceptance guarantee.
 * **`V12` (`tail_eventual`)**: Asserts that an `ACTIVE` virtual channel eventually observes its terminating `TAIL` or `HEAD_TAIL` flit dequeued, preventing zombie state-machine holds.
 * **`V13` (`credit_return_bound`)**: Verifies that following flit dequeue at an input buffer, the associated credit return pulse appears on the upstream link within $N \le 1$ cycle.
-* **`V14` (`no_deadlock_bound`)**: System-level liveness checking that whenever one or more buffers contain flits, forward progress occurs (at least one switch allocation grant occurs within $N \le 48$).
+* **`V14` (`no_deadlock_bound`)**: Conditional system progress: under bounded downstream credit return (`D_MAX`), bounded upstream flit/TAIL arrival, legal stable routes, and fair VA/SA arbitration, a nonempty router makes progress within a separately derived `N_PROGRESS`. Specify the progress event and compose the relevant pipeline, VA, SA and environment delays before enabling this acceptance check. Neither D-001 nor a fixed 48-cycle smoke-test budget proves a router-wide deadlock bound.
 * **`V15` (`pkt_completion_bound`)**: Proves that from the cycle a `HEAD` flit is granted switch traversal, the entire packet through `TAIL` completes egress within bounded latency $N_{PKT}$.
 
 ---
 
 #### B. Sachin (V1) — Link Handshakes, Framing & Credit Ranges (`S01`–`S08`)
 * **`S01` (`valid_known`)**: Asserts that `flit_valid` and `credit_valid` signals on the physical link never take unknown (`X` or `Z`) values once reset is deasserted.
-* **`S02` (`no_send_without_credit`)**: Protocol rule: `flit_valid |-> ocredit_avail[o][flit_vc]`; the sender holds `flit_valid` low without credit (INTERFACE.md s4).
+* **`S02` (`no_send_without_credit`)**: Registered egress reservation provenance, distinct from R12: after valid sampled history, `out_flit_valid[o]` implies `$past(issue[o] && ocredit_avail[o][issue_vc[o]])` and `out_flit_vc[o] == $past(issue_vc[o])`. R12 checks the same-edge issue/debit precondition. Guard the history across reset and enable only after a preceding non-reset sample. Never compare a registered output flit against the current remaining credit: the last legal reservation can leave that counter at zero (INTERFACE.md s5.2, s5.4, s9). An upstream link without access to issue uses an independent reservation/credit model instead.
 * **`S03` (`flit_vc_in_range`)**: Verifies that whenever `flit_valid` is high, the sideband `flit_vc` field specifies a valid index in the range `[0, NUM_VCS-1]`.
 * **`S04` (`credit_vc_in_range`)**: Verifies that whenever `credit_valid` is high, the returning credit channel specifier `credit_vc` is in the range `[0, NUM_VCS-1]`.
 * **`S05` (`no_credit_for_empty`)**: Proves that a receiver never generates a credit pulse on a VC whose internal occupancy is already zero.
@@ -56,7 +56,7 @@ IDs: `P01`–`P06` are the Gate-1 FIFO IDs fixed by `docs/INTERFACE.md` s6 and u
 * **`R06` (`out_grant_onehot0`)**: For every output `o`, `$onehot0(xbar_sel[o])`.
 * **`R07` (`one_grant_per_input`)**: For every input `p`, `$onehot0(sa_grant[p])` across its VCs.
 * **`R08` (`stage1_stage2_match`)**: Every `sa_grant[p][v]` has exactly one `xbar_sel[o][p]` with `o == sa_out_port[p][v]`, and every `xbar_sel[o][p]` has exactly one `sa_grant[p][v]` (INTERFACE.md s7).
-* **`R09` (`sa_fairness_bound`)**: Liveness bound proving that an input holding flits and credit is granted switch traversal within $N \le 48$ cycles under fair traffic.
+* **`R09` (`sa_fairness_bound`)**: Unit-level SA bounded-liveness candidate `sa_req[p][v] |-> ##[0:N_SA] sa_grant[p][v]`, with `N_SA = NUM_VCS*NUM_PORTS-1`. Requires the request to stay asserted until grant, a stable target route, and the explicitly documented contender/eligibility profile throughout the window; integration also requires persistent credit eligibility. D-001 measured 4/9/13/14 cycles at NUM_VCS 1/2/3/4 against bounds 4/9/14/19. Tight only at 1/2 VCs in that experiment; not formally proven or established for arbitrary changing contention. Register exact assumptions and validate the bound before counting it toward acceptance; formal eventual grant is conditional on the same fairness/progress assumptions.
 * **`R10` (`xbar_mux_onehot`)**: `crossbar` data path: `xbar_sel[o][p] |-> issue_flit[o] == xb_flit[p] && issue_vc[o] == xb_vc[p]`, and `issue[o] == |xbar_sel[o]` (one-hot select is R06).
 * **`R11` (`credit_in_range`)**: `ocredit_count[o][v] <= BUFFER_DEPTH`.
 * **`R12` (`no_valid_at_zero`)**: `issue[o] |-> ocredit_avail[o][issue_vc[o]]`; the debit happens at the output-register load.
@@ -99,5 +99,5 @@ a_<id>_<name>: assert property (p_<name>)  // intent; clk/rst_n; group
 
 - Label: `a_<id>_<name>`, id lowercase (`a_p06_credit_iff_dequeue`). Labels are referenced by BUG_LOG and the detection matrix; do not rename after merge.
 - One checker module per block, `tb/sva/<block>_sva.sv`, attached only in `tb/sva/bind_all.sv`, instance `u_<block>_sva`. Ports in the RTL's order, only the signals the properties read.
-- Liveness: bounded `##[0:N]` in simulation, `s_eventually` under `` `ifdef FORMAL ``. Environment constraints become `assume` under `` `ifdef FORMAL ``.
+- Liveness: use the property-specific bound in simulation and `s_eventually` under `` `ifdef FORMAL ``. Record persistence, route stability, contender profile and bounded environment progress explicitly. Measurement is not proof; unresolved bounds are not acceptance results. Environment constraints become `assume` under `` `ifdef FORMAL ``.
 - Every property registers at least one mutant it kills in the detection matrix before it counts toward the 40.

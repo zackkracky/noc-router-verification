@@ -1,21 +1,22 @@
 # NoC router interface specification — spec-v1 candidate
 
-Owner: Sachin (V1). Revision: 21 October 2026 (self-contained: external citations removed, `main` facts refreshed to `7df0cca`; s7.2 arbiter contract 20 October; 14 October 2026 base). Status: **DRAFT — proposed decisions, not frozen or approved.**
+Owner: Sachin (V1). Revision: 4 November 2026 (section 0 implementation status refreshed to `main` at `4f8a9b2`; signal-level contract unchanged). Status: **DRAFT — proposed decisions, not frozen or approved.**
 
 This contract covers the five-port wormhole router, its links, internal front/back boundary, and testbench connections. It is a specification, not executable RTL. Use this filename, `docs/INTERFACE.md`; an additional `interface.spec` file would duplicate the source of truth.
 
 ## 0. Authority and decisions requiring sign-off
 
-Scope of review: this document against the repository state on `main` at `7df0cca` (21 October 2026). It cites no file outside `main`. On `main` today:
+Scope of review: this document against the repository state on `main` at `4f8a9b2` (PR #27 merged). It cites no file outside `main`. On `main` today:
 
 | Section | Implemented by | PR |
 |---|---|---|
 | 1-2 parameters, types, flit layout | `rtl/pkg/noc_pkg.sv`, `tb/tests/tb_noc_pkg.sv` | #14 |
 | 6 FIFO contract | `rtl/front/input_fifo.sv`, `tb/tests/tb_fifo.sv`, `tb/sva/fifo_sva.sv` (P01-P06) | #13, #17 |
 | 7.2 arbiter contract | `rtl/back/rr_arbiter.sv`, `tb/tests/tb_rr_arbiter.sv` | #16 |
+| 7 switch allocation | `rtl/back/switch_allocator.sv`, `tb/tests/tb_switch_allocator.sv` | #20 |
 | 8 testbench interface | `tb/env/flit_if.sv`, `flit_driver.sv`, `flit_monitor.sv`, `flit_pkt.sv`; `tb_flit_if`, `tb_fifo_link`, `tb_fifo_empty_read` | #18 |
 
-No router datapath RTL exists yet (`input_port`, `route_unit`, `vc_allocator`, `switch_allocator`, `crossbar`, `output_unit`, `router_top`), so sections 3, 5, 7 and 7.1 are unimplemented contract.
+The remaining router blocks (`input_port`, `route_unit`, `vc_allocator`, `crossbar`, `output_unit`, `router_top`) are not on this `main` snapshot. Sections 3, 5 and 7.1 remain unimplemented; section 7 is partially implemented by the switch allocator. Open feature PRs do not count as merged implementations.
 
 This document is the only signal-level authority for the project and is self-contained: every decision it relies on is stated here, and no earlier interface draft or pre-repository planning document is needed to read it. Those earlier documents are historical and are not cited in a PR, a property or the paper; where their content survives, it has been restated here. Until `spec-v1` is tagged this is a candidate and the decision table below is what reviewers sign. Once tagged, this document governs behavior and `noc_pkg` implements the agreed constants and types. A disagreement between this document and RTL is a defect to resolve in the same PR, not permission for either to silently override the other.
 
