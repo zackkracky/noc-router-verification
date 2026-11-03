@@ -9,10 +9,11 @@ Phase 1a (1 Oct to 2 Nov 2026) **did not close on 2 Nov**: `route_unit`, `input_
 | Date | Item | Owner |
 |---|---|---|
 | 2026-12-10 | Phase 1b starts. First lab session: `xrun` on every test including `tb_crossbar` and `tb_output_unit`, and `jg -batch formal/fifo.tcl` on the merged TP-001 fix | all; Arnav, Aashish |
-| 2026-12-11 | Link-level TB on `input_port` once it exists | Sachin |
+| 2026-12-11 | Front-half TB harness written against INTERFACE.md s7 signal names, DUT side stubbed. No dependency on `input_port`: prepared in advance, not connected | Sachin |
 | 2026-12-12 | `route_unit` (was 24 Oct) | Revanth |
 | 2026-12-13 | INTERFACE.md spec-v1: all four sign-offs on one current-`main` commit (was 30 Oct) | all |
 | 2026-12-17 | `input_port`, `vc_allocator` (were 31 Oct) | Revanth |
+| 2026-12-19 | Connect the harness to the real `input_port` and run it. Depends on 17 Dec | Sachin |
 | 2026-12-19 | Scoreboard v1 (was 2 Nov) | Aashish |
 | 2026-12-31 | Phase 1 exit: single packet on all 20 port pairs passes directed tests; contention tests pass with VCs and credits | all |
 
