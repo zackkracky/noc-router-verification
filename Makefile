@@ -130,11 +130,13 @@ formal:
 clean:
 	rm -rf obj_* xcelium_* logs xrun.history xrun.key *.shm
 
-# Lint one RTL file standalone. Package compiled first so imports resolve.
+# Lint one RTL file standalone. Package compiled first so imports resolve; -y finds
+# submodules by file name (convention 1), so a file that instantiates others lints too.
 PKG ?= rtl/pkg/noc_pkg.sv
+RTL_DIRS ?= rtl/front rtl/back
 lint-rtl:
 	@test -n "$(FILE)" || { echo "usage: make lint-rtl FILE=rtl/<path>.sv"; exit 1; }
 	@test -f "$(FILE)" || { echo "no such file: $(FILE)"; exit 1; }
 	@test "$(FILE)" != "$(PKG)" || { echo "package has no top module; use: make lint TEST=tb_noc_pkg"; exit 1; }
-	verilator --lint-only -Wall --timescale 1ns/1ps \
+	verilator --lint-only -Wall --timescale 1ns/1ps $(addprefix -y ,$(RTL_DIRS)) \
 	  $(wildcard $(PKG)) $(FILE)
