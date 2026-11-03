@@ -349,8 +349,8 @@ Done - back-half RTL, three PRs:
 
 - #29 `xbar: add 5x5 flit and VC crossbar with exhaustive one-hot test` (`arnav/crossbar`, off `main`). Ports are the INTERFACE.md s7 names: `xbar_sel[o][p]` selects `xb_flit[p]` and `xb_vc[p]` onto `issue_flit[o]` and `issue_vc[o]`; an unselected output reads zero. `tb_crossbar` runs four `(FLIT_WIDTH, NUM_VCS)` points, (64,2), (32,1), (128,4), (64,3), 2130 checks each.
 - #30 `credit: add output_unit with per-VC credit counters and model test` (`arnav/output-unit`, off `main`). Credits only (T9). `issue` loads the output register and debits `issue_vc`; a same-VC return nets zero; the register clears without a new issue (s5.2). Exports `ocredit_avail` and `ocredit_count` (s7, T11). `tb_output_unit` compares every counter exactly against a model every cycle at four `(F,V,D)` points, about 190k checks per seed.
-- #31 `rtl: add router_top skeleton with the back half wired, lint-only` (`arnav/router-top-skel`, stacked on #24 and #25, Draft). `rtl/back/router_top.sv`, flat s4 ports, internal s7 signals, granted-VC mux, `switch_allocator`, `crossbar`, five `output_unit`s. `input_port` x5 stubbed. Lint-clean with no waiver at four parameter points.
-- #23 (`arnav/router-top`) is superseded by #24-#26 and should be closed with its branch deleted: it did not elaborate.
+- #31 `rtl: add router_top skeleton with the back half wired, lint-only` (`arnav/router-top-skel`, stacked on #29 and #30, Draft). `rtl/back/router_top.sv`, flat s4 ports, internal s7 signals, granted-VC mux, `switch_allocator`, `crossbar`, five `output_unit`s. `input_port` x5 stubbed. Lint-clean with no waiver at four parameter points.
+- #23 (`arnav/router-top`) is superseded by #29-#31 and should be closed with its branch deleted: it did not elaborate.
 
 Validation (Verilator 5.020, the CI version, on clean checkouts):
 
