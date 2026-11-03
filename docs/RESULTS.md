@@ -28,13 +28,15 @@ Injected mutants only. Real defects live in `docs/BUG_LOG.md` and `docs/bugs/`; 
 |---|---|---|---|---|---|---|---|
 | M-001 | 2026-10-19 | `rr_arbiter` | 6 injected, 5 non-equivalent | 5/5 | `tb_rr_arbiter` reference model | `edce4cc` | `make sim TEST=tb_rr_arbiter SEED=1` per mutant |
 | M-002 | 2026-10-21 | `switch_allocator` | 7 | 7/7 | `tb_switch_allocator` reference model + s7 contract checks | `08c0fdf` | `make sim TEST=tb_switch_allocator SEED=1` per mutant |
-| M-003 | 2026-10-14 | `input_fifo` (SVA-only, TB checks non-fatal) | 9 | 5 | P06 (registered `credit_out`), P04, P05, P01/P02 | `3ea9243` | `make build TEST=tb_fifo` then `obj_tb_fifo/sim +sva_only` |
+| M-003 | 2026-10-14 | `input_fifo` (SVA-only, TB checks non-fatal) | 9 injected, 2 equivalent, 7 non-equivalent | 4/7 | P06 (registered `credit_out`), P04 (no-increment), P05 (no-decrement), P01/P02 (`full` at DEPTH-1) | `3ea9243` | `make build TEST=tb_fifo` then `obj_tb_fifo/sim +sva_only` |
 
-`M-001` note: the no-wrap mutant (`ptr_q <= grant_idx + 1` without the `N-1` check) is **equivalent at the ports** and is excluded from the denominator; only an internal `ptr_q < N` property distinguishes it (R03). `M-003` survivors: simultaneous read/write count change, `rd_ptr`/`wr_ptr` stuck. Both are assigned slots in `tb/sva/PLAN.md`.
-
+`M-001` note: the no-wrap mutant (`ptr_q <= grant_idx + 1` without the `N-1` check) is **equivalent at the ports** and is excluded from the denominator; only an internal `ptr_q < N` property distinguishes it (R03).
+ 
+`M-003` note: two of the nine are equivalent under P01/P02 and are excluded from the denominator, as M-001 does. The named survivors are the simultaneous read/write count change (no bound hold property; `input_fifo.count_holds_correctly` exists inline) and a stuck `rd_ptr`/`wr_ptr` (data path, scoreboard). Both are assigned slots in `tb/sva/PLAN.md`.
+ 
 These are pilot measurements, not the paper's matrix. The paper's 37 mutants in 7 classes are injected only after the property plan is frozen.
-
-**Audit note, 2026-11-03.** Every R2 and R3 row was first dated before the commit it cites existed: `edce4cc` was created 2026-10-21 00:47 IST (M-001, D-003 dated 19 Oct), `3ea9243` 2026-10-21 03:00 IST (M-003 dated 14 Oct), `08c0fdf` 2026-10-25 23:38 IST (M-002, D-001, D-002 dated 21 Oct). Those runs were made on pre-squash branch commits that the squash merge replaced, which breaks the first convention above.
+ 
+**Audit, 2026-11-03.** Every R2 and R3 row was first dated before the commit it cites existed: `edce4cc` was created 2026-10-21 00:47 IST (M-001, D-003 dated 19 Oct), `3ea9243` 2026-10-21 03:00 IST (M-003 dated 14 Oct), `08c0fdf` 2026-10-25 23:38 IST (M-002, D-001, D-002 dated 21 Oct). Those runs were made on pre-squash branch commits that the squash merge replaced, which breaks the first convention above.
 
 - D-001, D-002 and D-003 were re-run on the cited commits on 2026-11-03 with Verilator 5.020 and gave identical values to the last digit. Their dates now record that re-run; the first measurements are in SYNC.md.
 - M-001, M-002 and M-003 **cannot be re-run**: the injected mutants are not recorded anywhere in the repository, so the `command` column names how a mutant was run but not what it was. Until each mutant's exact change is committed, these rows are pilot data that a reviewer cannot audit. From M-004 on, every R2 row lists its mutants as exact before/after source lines.
