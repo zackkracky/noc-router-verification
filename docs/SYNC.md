@@ -341,3 +341,94 @@ Severity and priority are separate fields. TP-001 is S4 and P1: cosmetic in simu
 Class codes C1-C7 are provisional until Aashish checks them against PAPER_PLAN v1.0. They live in a field, not in the ID, so remapping is one PR.
 PM-001's fix is PR #13 (1fd956e), issue #11.the #11 in the commit subject is the issue.
 One front end is not verification. Lint and CI were green for weeks on source that was never legal SystemVerilog. Xcelium -elaborate on every merged test and analyze on each new block are now entry conditions, not optional lab extras.
+## 2026-11-03 (async, Arnav)
+
+Covers 3 Nov only. Phase 1a did not close on 2 Nov. The exam blackout (3 Nov - 9 Dec)
+started today and this session was worked inside it by explicit decision; it is the
+exception, not a change to the rule. Nothing further is planned before 10 Dec.
+
+Done - three branches off main (8fa6eaa), none pushed at the time of writing:
+
+- `rtl/back/crossbar.sv` + `tb/tests/tb_crossbar.sv` + `.f` on `arnav/crossbar`.
+  NUM_PORTS x NUM_PORTS AND-OR mux, `grant_i[o][p]` one-hot or zero per output,
+  combinational, no latch. Test: zero-grant, the exhaustive (output, input) one-hot
+  sweep with every other output checked idle, 200 random full permutations and 200
+  random partial matchings; 2130 checks per seed.
+- `rtl/back/output_unit.sv` + `tb/tests/tb_output_unit.sv` + `.f` on
+  `arnav/output-unit`. Per-VC credit counter plus the launch register. Resets to
+  `DEF_BUFFER_DEPTH`, decrements on send, increments on a returned credit, holds when
+  both land on the same VC in one cycle. Test: reset depth proved through the port
+  interface alone, a refill phase, 5000 random cycles against an integer reference
+  model with a forced simultaneous inc/dec every 16th cycle, and a final drain;
+  about 26.8k checks per seed.
+- `rtl/router_top.sv` on `arnav/router-top-skel`. Back half wired
+  (switch_allocator -> crossbar -> output_unit x5), front half tied off in one marked
+  `always_comb` stub until `route_unit`, `input_port` and `vc_allocator` land.
+  Lint-only and intentionally non-functional. No test, by exception: there is no
+  behaviour to exercise until the front half merges. A functional `tb_router_top` is
+  a Phase 1b item.
+
+Validation (Verilator 5.020, the CI version, on a clean clone of main):
+
+- `make check SEEDS="1 2 3"`: 40/40 PASS across 10 tests, up from 32/32 across 8.
+  Both new tests are auto-discovered from `tb/tests/*.f`; `TESTS` needed no edit.
+- `make neg`: 2/2 PASS.
+- `make lint-rtl FILE=` clean on `crossbar.sv` and `output_unit.sv`.
+- Mutation, injected after the tests were written and run through `make sim` so the
+  `TEST PASSED` grep is the gate: 4/4 crossbar mutants killed (valid stuck high,
+  input passthrough instead of mux, grant index transposed, valid reading the wrong
+  grant row) and 5/5 output_unit mutants killed (reset depth off by one, collision
+  decrementing instead of holding, has_credit threshold off by one, launch register
+  not reset, credit VC compare dropped). 9 of 9.
+- Not run: Verilator 5.032 (local) on the final revision, Xcelium, JasperGold.
+  Nothing here has been elaborated under `xrun`, so per the 30 Oct entry these are
+  not entry-condition complete and must be re-run at the next lab session.
+
+Decisions and notes for everyone:
+
+- `output_unit` is credits only. The branch draft carried a `vc_busy_q` ownership
+  table, which contradicts INTERFACE.md and the README: the single busy/owner table
+  stays in `vc_allocator`. Resolved in favour of INTERFACE, so no spec change and no
+  four-way sign-off is needed for this.
+- `router_top` drives `output_unit.send_valid_i` from the allocator's `issue[o]`,
+  not from `crossbar.valid_o`. The two are equal by construction, since
+  `valid_o[o]` is `|grant_i[o]` and `grant_i` is `xbar_sel`. The equivalence is
+  worth a property once a functional testbench exists; Aashish, this is a candidate
+  for a spare A-series slot.
+- `switch_allocator.xbar_sel` is `[o][p]`, which is the orientation `crossbar.grant_i`
+  wants, so the two connect with no transpose. Getting this backwards would still
+  lint clean and would route every flit to the wrong output, so it is worth an
+  assertion rather than a comment.
+- `filelist.f` is untouched by all three branches, per the 14 Oct rule. Note that it
+  now contains only `tb/tests/tb_smoke.sv`, and `tb_smoke.f` exists, so the Makefile
+  fallback never selects it. It is effectively dead and should either be populated
+  or deleted; that is a separate decision, not a Phase 1a item.
+- `make lint-rtl FILE=` cannot lint a file with module dependencies: it compiles the
+  package plus the one file, so `switch_allocator.sv` and `router_top.sv` both fail
+  on a missing submodule. Pre-existing, affects `switch_allocator` today, and is the
+  open hygiene item.
+
+Corrections to earlier claims in this file and in STATE:
+
+- The 20 Oct entry's `router_top` date of 31 Oct was missed; the skeleton lands today
+  instead, and the 25 Oct fallback (front half stubbed) is what shipped.
+- `DEF_FLIT_WIDTH` is 64. A review note claiming `router_top`'s 64 disagreed with
+  `output_unit`'s 32 had it backwards: 64 was correct and 32 was the error. Both now
+  take the package default and neither hardcodes a width.
+
+Blocked:
+
+- `rtl/front/route_unit.sv` is still on no branch as of 3 Nov, ten days past its
+  24 Oct date. `input_port` and `vc_allocator` depend on it. The front half of
+  `router_top` stays stubbed until all three land, so the skeleton cannot become
+  functional and no router-level test can be written. Revanth.
+- Scoreboard v1 (Aashish, 2 Nov) did not land.
+- `xrun` and JasperGold re-runs after the TP-001 fix, both pending a lab session.
+- Semester 5 mid-sem 2 and all semester 6 dates, still uncollected.
+
+Planned:
+
+- Nothing before 10 Dec. On resume: open the three PRs if not already open, re-run
+  `make check` and `make neg` under `xrun` at the first lab session, and re-measure
+  the nine mutants under Verilator 5.032 and Xcelium before any of these numbers are
+  quoted in the paper.
