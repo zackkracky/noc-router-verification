@@ -15,9 +15,10 @@ Conventions:
 | Q-001 | 2026-10-28 | Xcelium `xrun` 22.09-s003 | `08c0fdf` | `make check SEEDS="1 2 3 4 5" SIM=xcelium` | 48/48 PASS: 8 tests x (lint + seeds 1-5) | in repo: `docs/qual/2026-10-28/xcelium-summary.txt`; full set A-001 |
 | Q-002 | 2026-10-28 | Xcelium `xrun` 22.09-s003 | `08c0fdf` | `make sim TEST=tb_fifo_link SEED=1 SIM=xcelium XRFLAGS=+define+FLIT_IF_CLOCKING` | PASS on all four `(F,V,D)` configs; `@(link.cb)` accepted, so the opt-in clocking blocks stay. Elaboration reports 18 clocking items, confirming the define was active. The original probe was run by hand: the Makefile had no define passthrough until `XRFLAGS` was added in the same PR, and the command above is the reproducible form | in repo: `docs/qual/2026-10-28/xcelium-clocking-probe.excerpt.log` |
 | Q-003 | 2026-10-28 | JasperGold (Jasper Apps) 2022.09p001 | `08c0fdf` | `jg -batch formal/fifo.tcl` | **FAIL at `analyze`**: VERI-1906 x5 on `input_fifo` input ports, VERI-1072 module ignored; 0 properties elaborated, 0 proven. Cause TP-001 (`docs/BUG_LOG.md`) | in repo: `docs/qual/2026-10-28/jasper-fifo-analyze.excerpt.log` |
-| Q-004 | 2026-10-28 | Verilator 5.020 | `08c0fdf` + TP-001 patch | `make check SEEDS="1 2 3"` then `make neg` | 32/32 PASS, `make neg` 2/2 PASS: the TP-001 fix is regression-neutral | not archived (reproducible locally) |
+| Q-004 | 2026-10-28 | Verilator 5.020 | `08c0fdf` + TP-001 patch | `make check SEEDS="1 2 3"` then `make neg` | 32/32 PASS, `make neg` 2/2 PASS: the TP-001 fix is regression-neutral. Run on an unmerged patch, so the commit column is not a full-tree commit; Q-005 repeats it on the merged fix | not archived (reproducible locally) |
+| Q-005 | 2026-11-03 | Verilator 5.020 | `907433f` | `make check SEEDS="1 2 3"` then `make neg` | 32/32 PASS, `make neg` 2/2 PASS on the merged TP-001 fix (#21) | not archived (reproducible locally) |
 
-Open: P01-P06 have **no** JasperGold proof. The first proof row lands only after the TP-001 fix merges and `formal/fifo.tcl` reruns. Until then no draft, slide or application may say the FIFO properties are formally proven.
+Open: P01-P06 have **no** JasperGold proof. The TP-001 fix merged in #21 (`907433f`); the first proof row lands when `formal/fifo.tcl` is re-run on it at the next lab session. Until then no draft, slide or application may say the FIFO properties are formally proven.
 
 ## R2. Unit-level mutation kills
 
@@ -33,13 +34,19 @@ Injected mutants only. Real defects live in `docs/BUG_LOG.md` and `docs/bugs/`; 
 
 These are pilot measurements, not the paper's matrix. The paper's 37 mutants in 7 classes are injected only after the property plan is frozen.
 
+**Audit note, 2026-11-03.** Every R2 and R3 row was first dated before the commit it cites existed: `edce4cc` was created 2026-10-21 00:47 IST (M-001, D-003 dated 19 Oct), `3ea9243` 2026-10-21 03:00 IST (M-003 dated 14 Oct), `08c0fdf` 2026-10-25 23:38 IST (M-002, D-001, D-002 dated 21 Oct). Those runs were made on pre-squash branch commits that the squash merge replaced, which breaks the first convention above.
+
+- D-001, D-002 and D-003 were re-run on the cited commits on 2026-11-03 with Verilator 5.020 and gave identical values to the last digit. Their dates now record that re-run; the first measurements are in SYNC.md.
+- M-001, M-002 and M-003 **cannot be re-run**: the injected mutants are not recorded anywhere in the repository, so the `command` column names how a mutant was run but not what it was. Until each mutant's exact change is committed, these rows are pilot data that a reviewer cannot audit. From M-004 on, every R2 row lists its mutants as exact before/after source lines.
+- M-003 counts 9 injected and 5 killed, while STATE.md records two of the 9 as equivalent under P01/P02. M-001 excludes equivalents from the denominator; M-003 should do the same (5 of 7 non-equivalent) or say why not.
+
 ## R3. Measured design characteristics
 
 | id | date | metric | value | commit | command |
 |---|---|---|---|---|---|
-| D-001 | 2026-10-21 | `switch_allocator` starvation max wait, `NUM_VCS` 1/2/3/4 at seed 1 | 4 / 9 / 13 / 14 cycles against bound `N_SA = NUM_VCS*NUM_PORTS-1` = 4 / 9 / 14 / 19 | `08c0fdf` | `make sim TEST=tb_switch_allocator SEED=1` |
-| D-002 | 2026-10-21 | `switch_allocator` allocation efficiency (grants / maximum bipartite matching), `NUM_VCS` 1/2/3/4 | 1.0000 / 0.9136 / 0.8345 / 0.7795 | `08c0fdf` | `make sim TEST=tb_switch_allocator SEED=1` |
-| D-003 | 2026-10-19 | `rr_arbiter` max wait under a held request, `N` = 1,2,3,4,5,8 | `N-1` in every case (bound tight) | `edce4cc` | `make sim TEST=tb_rr_arbiter SEED=1` |
+| D-001 | 2026-11-03 | `switch_allocator` starvation max wait, `NUM_VCS` 1/2/3/4 at seed 1 | 4 / 9 / 13 / 14 cycles against bound `N_SA = NUM_VCS*NUM_PORTS-1` = 4 / 9 / 14 / 19 | `08c0fdf` | `make sim TEST=tb_switch_allocator SEED=1` |
+| D-002 | 2026-11-03 | `switch_allocator` allocation efficiency (grants / maximum bipartite matching), `NUM_VCS` 1/2/3/4 | 1.0000 / 0.9136 / 0.8345 / 0.7795 | `08c0fdf` | `make sim TEST=tb_switch_allocator SEED=1` |
+| D-003 | 2026-11-03 | `rr_arbiter` max wait under a held request, `N` = 1,2,3,4,5,8 | `N-1` in every case (bound tight) | `edce4cc` | `make sim TEST=tb_rr_arbiter SEED=1` |
 
 `D-001` is **measured, not proven**, and tight only at `NUM_VCS <= 2`. Any paper sentence about the bound says "measured"; the proof is formal work in Phase 2.
 

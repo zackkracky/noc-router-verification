@@ -10,6 +10,23 @@ Guide: Prof. P. Anuradha, CBIT.
 
 Current phase, gate status, open bugs and counters: `docs/STATE.md`. Weekly history: `docs/SYNC.md`.
 
+## Results so far
+
+Every number traces to a row in `docs/RESULTS.md` naming the commit, command and tool version. Injected mutants and real defects are never in one table.
+
+| id | Result | Standing |
+|---|---|---|
+| M-001 | `rr_arbiter`: 5/5 non-equivalent injected mutants killed; the sixth (no-wrap) is equivalent at the ports and only an internal `ptr_q < N` property separates it | pilot mutation |
+| M-002 | `switch_allocator`: 7/7 injected mutants killed by a reference model plus model-free s7 contract checks | pilot mutation |
+| D-001 | `switch_allocator` starvation: measured max wait 4 / 9 / 13 / 14 cycles at `NUM_VCS` 1-4 against `N_SA = NUM_VCS*NUM_PORTS-1` = 4 / 9 / 14 / 19, tight only at `NUM_VCS <= 2` | measured, not proven |
+| D-002 | `switch_allocator` efficiency against maximum bipartite matching: 1.0000 / 0.9136 / 0.8345 / 0.7795 at `NUM_VCS` 1-4, the cost of committing one VC per input at stage 1 | measured |
+| PM-001 | a cross-written property (P06) failed at 95 ns on a FIFO whose co-written unit test passed: `credit_out` registered instead of combinational | pre-merge, not counted |
+| TP-001 | JasperGold `analyze` rejected `input logic` under `` `default_nettype none `` in 5 files that Verilator and Xcelium had accepted for weeks | portability, not counted |
+
+Formal proofs: none yet. Counted RTL bugs (`B-nnn`): 0 of the 2 the Phase 2 exit requires.
+
+No license file yet, so default copyright applies and no reuse rights are granted. Choosing one is a pending team decision.
+
 ## Team
 
 | Name | Code | GitHub | Owns | Verifies (cross SVA) | Paper section |
@@ -32,7 +49,7 @@ make lint TEST=tb_noc_pkg
 make sim  TEST=tb_noc_pkg SEED=1
 make sim  TEST=tb_noc_pkg SEED=1 WAVES=1   # dumps logs/tb_noc_pkg_s1.fst
 make waves TEST=tb_noc_pkg SEED=1          # opens it in GTKWave
-make check SEEDS="1 2 3 4 5"               # eight tests: 48 checks; logs/summary.txt
+make check SEEDS="1 2 3 4 5"               # lint + every seed, every test; logs/summary.txt
 make neg                                   # two expected failures; logs/negative-summary.txt
 make clean
 ```
@@ -44,7 +61,7 @@ Every test prints `TEST PASSED`; `make sim` fails if the marker is missing. CI (
 | Target | Variables | Does |
 |---|---|---|
 | `lint` | `TEST=` | Verilator `-Wall --lint-only` on the test's filelist; warnings fatal; log in `logs/<test>_lint_<sim>.log` |
-| `lint-rtl` | `FILE=rtl/back/rr_arbiter.sv` | one RTL file with `noc_pkg`, no testbench |
+| `lint-rtl` | `FILE=rtl/back/rr_arbiter.sv` | one RTL file with `noc_pkg`, no testbench; submodules are found by file name in `RTL_DIRS` (`rtl/front rtl/back`) |
 | `build` | `TEST=` | compile only |
 | `sim` (alias `run`) | `TEST= SEED= WAVES=0/1 SIM=verilator/xcelium` | build and run, require `TEST PASSED`; logs in `logs/<test>_build_<sim>.log` and `logs/<test>_s<seed>_<sim>.log` |
 | `waves` | `TEST= SEED=` | open the newest `.fst`/`.vcd` for that test and seed, with `tb/tests/waves/<TEST>.gtkw` if present |
@@ -132,7 +149,7 @@ Checked by `make lint` (`-Wall`, zero warnings on RTL, warnings fatal; never `-W
 6. `always_comb` for all combinational logic, `always_ff` for all registers. No `always @*`, no `always @(posedge clk)` in RTL, no `initial` in RTL, no latches, no `#` delays in RTL.
 7. `logic` for every internal signal and output (`output logic` is a variable). Input ports are `input wire logic`: under `` `default_nettype none `` an ANSI `input logic` leaves the port KIND to the default net type (1800-2017 s23.2.2.3) — Xcelium only warns (NODNTW), JasperGold errors (VERI-1906, TP-001). No `reg`, no bare `wire` declarations, no `integer`. Loop indices `int unsigned` in `for` inside `always_comb`.
 8. State machines: `typedef enum logic [N-1:0] {...} state_e;` with named states; next-state logic in `always_comb`, state register in `always_ff`; every `case` has a `default:`.
-9. Widths from `noc_pkg::vc_w()` / `cnt_w()` or `$clog2()`, never hardcoded. No implicit truncation: Verilator `WIDTH` must be clean. Also clean: `UNUSED`, `LATCH`, `BLKSEQ`, `CASEINCOMPLETE`. The only permitted `UNUSEDSIGNAL` waiver is the two reserved WF ports in `route_unit` (INTERFACE.md s3).
+9. `VC_W` and `CNT_W` from `noc_pkg::vc_w()` / `cnt_w()` in each scope, never a raw `$clog2` (INTERFACE.md s1); other widths from package constants or `$clog2()`; nothing hardcoded. No implicit truncation: Verilator `WIDTH` must be clean. Also clean: `UNUSED`, `LATCH`, `BLKSEQ`, `CASEINCOMPLETE`. The only permitted `UNUSEDSIGNAL` waiver is the two reserved WF ports in `route_unit` (INTERFACE.md s3).
 10. Port order: `clk`, `rst_n`, inputs, outputs. One port per line. Parameters before ports, defaults stated.
 11. Non-blocking `<=` in `always_ff`, blocking `=` in `always_comb`. Never mixed.
 12. Shared types and encodings come from `noc_pkg`; no local redefinition of flit fields, port numbers or width helpers. Declare `flit_t` locally per module.
@@ -186,7 +203,7 @@ This section is the process reference for the repo. Rules marked (enforced) are 
 
 - `main` accepts only a CI-green (`lint-and-sim`), approved, up-to-date, squash-merged PR. No bypass, owner included. (enforced)
 - One branch per task: `<name>/<short-task>`, lowercase, hyphens (`revu/input-fifo`, `aashish/sva-fifo`). Not `fix`, `work`, `test123`.
-- Branch from fresh `main` (`git switch main && git pull`), never from another feature branch.
+- Branch from fresh `main` (`git switch main && git pull`), never from another feature branch. One exception: a PR whose code needs an open PR's files is stacked on it, stays Draft until that base merges, then rebases onto `main`. A PR that only shares a reviewer or a deadline is not a stack.
 - Target merge within 5 days; a branch older than 2 weeks is rebased or split.
 - Never commit to someone else's branch; comment on their PR instead.
 - Delete the local branch after merge (`git branch -d`); GitHub deletes the remote one.
@@ -294,7 +311,7 @@ If a rule here disagrees with `docs/STATE.md`, this section wins for process and
 | Icarus 12 | everyone | fallback simulation |
 | GTKWave | everyone | `make waves` |
 | Xcelium | college lab | `SIM=xcelium` cross-check; qualified 28 Oct 2026 (xrun 22.09-s003): all 8 tests lint + seeds 1-5 green, `FLIT_IF_CLOCKING` probe passed (clocking blocks stay) |
-| JasperGold | college lab | Phase 2 formal on safety properties; Jasper 2022.09 licensed and working 28 Oct 2026. First `analyze` found TP-001 (input port net kind); `formal/fifo.tcl` is the entry point, proofs pending the TP-001 fix |
+| JasperGold | college lab | Phase 2 formal on safety properties; Jasper 2022.09 licensed and working 28 Oct 2026. First `analyze` found TP-001 (input port net kind), fixed in #21 (`907433f`); `formal/fifo.tcl` is the entry point, proofs pending a clean `analyze` re-run at the next lab session |
 
 Liveness properties use `##[0:N]` in simulation and `s_eventually` under `` `ifdef FORMAL ``.
 
