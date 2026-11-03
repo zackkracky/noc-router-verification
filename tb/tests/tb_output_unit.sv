@@ -19,6 +19,8 @@ module ou_chk
   localparam int unsigned VW = vc_w(NV);
   localparam int unsigned CW = cnt_w(BD);
 
+  int unsigned seed_v;
+  int          seed_r;
   logic                    rst_n;
   logic                    issue;
   logic [FW-1:0]           issue_flit;
@@ -76,7 +78,9 @@ module ou_chk
     rst_n = 1'b0; issue = 1'b0; issue_flit = '0; issue_vc = '0;
     out_credit_valid = 1'b0; out_credit_vc = '0;
     foreach (m_cnt[v]) m_cnt[v] = BD;
-    void'($urandom(SEED));
+    if (!$value$plusargs("seed=%d", seed_v)) seed_v = 1;
+    seed_r = int'(seed_v * 1000 + SEED);//runtime seed x per-instance offset, as tb_switch_allocator
+    void'($urandom(seed_r));
 
     //reset held over two edges (s8), then every counter reads BUFFER_DEPTH and the register is clear
     repeat (2) @(posedge clk);
@@ -121,7 +125,6 @@ module tb_output_unit;
   logic d1, d2, d3, d4;
   int   e1, e2, e3, e4;
   int   c1, c2, c3, c4;
-  int   seed;
 
   ou_chk #(.FW(64),  .NV(2), .BD(4), .SEED(1)) u_def  (.clk(clk), .done(d1), .errs(e1), .checks(c1));//defaults
   ou_chk #(.FW(32),  .NV(1), .BD(2), .SEED(2)) u_min  (.clk(clk), .done(d2), .errs(e2), .checks(c2));//smallest
@@ -129,8 +132,6 @@ module tb_output_unit;
   ou_chk #(.FW(64),  .NV(3), .BD(4), .SEED(4)) u_npo2 (.clk(clk), .done(d4), .errs(e4), .checks(c4));//non-power-of-2 VCs
 
   initial begin
-    if (!$value$plusargs("seed=%d", seed)) seed = 1;
-    void'($urandom(seed));
     wait (d1 && d2 && d3 && d4);
     #10 $finish;//verdict printed in final
   end
