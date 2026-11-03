@@ -1,6 +1,6 @@
 # STATE
 
-Updated: 2026-11-03 (Arnav). Single snapshot; history lives in SYNC.md. Repo facts refreshed to `main` at `8fa6eaa` (#21 TP-001 fix and #22 bug-log format merged) plus the open PRs #24-#26.
+Updated: 2026-11-03 (Arnav). Single snapshot; history lives in SYNC.md. Repo facts refreshed to `main` at `4f8a9b2` (#21 TP-001 fix and #22 bug-log format merged) plus the open PRs #28-#31.
 
 ## Phase
 Phase 1a (1 Oct to 2 Nov 2026) **did not close on 2 Nov**: `route_unit`, `input_port`, `vc_allocator`, scoreboard v1 and the spec-v1 sign-offs slipped. Its remaining items are absorbed into Phase 1b. Exam blackout 3 Nov to 9 Dec 2026 (sem-5 end-sem 17 Nov to 9 Dec): Arnav <= 8 h/week, Sachin <= 5, Revanth and Aashish <= 1 reactive only; no session within 48 h before a paper; kill-switch on a bad paper. Nothing is scheduled inside the window. Phase 1b starts 10 Dec; Phase 1 exit stays 31 Dec.
@@ -45,8 +45,8 @@ Met late on 2026-10-21 by PR #18 (`7df0cca`): `input_fifo` passing `tb_fifo`, P0
 | `rtl/back/rr_arbiter.sv` + `tb_rr_arbiter` | on `main` (#16); M-001 5/5 non-equivalent mutants; D-003 max wait N-1 at N = 1,2,3,4,5,8 | Arnav |
 | `rtl/back/switch_allocator.sv` + `tb_switch_allocator` | on `main` (#20), Xcelium-qualified 28 Oct; M-002 7/7; D-001 and D-002 re-verified 3 Nov on `08c0fdf` | Arnav |
 | `rtl/back/crossbar.sv` + `tb_crossbar` | PR #29. s7 names (`xbar_sel`, `xb_flit`, `xb_vc`, `issue_flit`, `issue_vc`); 4 parameter points, 2130 checks each; 5/5 mutants; not yet run under `xrun` | Arnav |
-| `rtl/back/output_unit.sv` + `tb_output_unit` | PR #25. Credits only (T9); exports `ocredit_avail` and `ocredit_count` (T11); exact count vs model every cycle at 4 parameter points; 7/7 mutants; not yet run under `xrun` | Arnav |
-| `rtl/back/router_top.sv` | PR #26. s4 flat ports, back half wired, `input_port` x5 stubbed; lint-only at 4 parameter points | Arnav |
+| `rtl/back/output_unit.sv` + `tb_output_unit` | PR #30. Credits only (T9); exports `ocredit_avail` and `ocredit_count` (T11); exact count vs model every cycle at 4 parameter points; 7/7 mutants; not yet run under `xrun` | Arnav |
+| `rtl/back/router_top.sv` | PR #31. s4 flat ports, back half wired, `input_port` x5 stubbed; lint-only at 4 parameter points | Arnav |
 | `rtl/front/route_unit.sv`, `input_port.sv`, `vc_allocator.sv` | not started on any branch | Revanth |
 | `tb/sva/fifo_sva.sv` P01-P06 + `bind_all.sv` | on `main` (#17), run in CI on `tb_fifo` and `tb_fifo_link`. Six inline FIFO properties and three inline `tb_fifo` assertions still to move into bind-only checkers | Aashish |
 | Link environment | on `main` (#18). Clocking blocks qualified on Xcelium 28 Oct (Q-002) and stay | Sachin |
