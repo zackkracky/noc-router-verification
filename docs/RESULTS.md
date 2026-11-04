@@ -29,11 +29,40 @@ Injected mutants only. Real defects live in `docs/BUG_LOG.md` and `docs/bugs/`; 
 | M-001 | 2026-11-03 | `rr_arbiter` | 6 injected, 1 equivalent, 5 non-equivalent | 5/5 | `tb_rr_arbiter` reference model | `edce4cc` | `make sim TEST=tb_rr_arbiter SEED=1` per mutant |
 | M-002 | 2026-11-03 | `switch_allocator` | 7 injected, 0 equivalent | 7/7 | `tb_switch_allocator` reference model + s7 contract checks | `08c0fdf` | `make sim TEST=tb_switch_allocator SEED=1` per mutant |
 | M-003 | 2026-10-14 | `input_fifo` (SVA-only, TB checks non-fatal) | 9 injected, 2 equivalent, 7 non-equivalent | 4/7 | P06 (registered `credit_out`), P04 (no-increment), P05 (no-decrement), P01/P02 (`full` at DEPTH-1) | `3ea9243` | `make build TEST=tb_fifo` then `obj_tb_fifo/sim +sva_only` |
+| M-004 | 2026-11-04 | `crossbar` | 5 injected, 0 equivalent | 5/5 | `tb_crossbar` reference checks at four (FLIT_WIDTH, NUM_VCS) points | `b2be922` | `make sim TEST=tb_crossbar SEED=1` per mutant |
+| M-005 | 2026-11-04 | `output_unit` | 7 injected, 0 equivalent | 7/7 | `tb_output_unit` exact-count model at four (F,V,D) points | `b2be922` | `make sim TEST=tb_output_unit SEED=1` per mutant |
  
 `M-001` note: the no-wrap mutant (`ptr_q <= grant_idx + 1` without the `N-1` check) is **equivalent at the ports** and is excluded from the denominator; only an internal `ptr_q < N` property distinguishes it (R03).
  
 `M-003` note: two of the nine are equivalent under P01/P02 and are excluded from the denominator, as M-001 does. The named survivors are the simultaneous read/write count change (no bound hold property; `input_fifo.count_holds_correctly` exists inline) and a stuck `rd_ptr`/`wr_ptr` (data path, scoreboard). Both are assigned slots in `tb/sva/PLAN.md`.
  
+`M-004` mutants, `rtl/back/crossbar.sv`. Each is a single-line substitution; the gate is the
+`TEST PASSED` grep in `make sim`, so a surviving mutant would show as a passing run.
+
+| id | class | before | after |
+|---|---|---|---|
+| XB-M1 | wrong source index | `issue_flit[o] \|= xb_flit[p] &` | `issue_flit[o] \|= xb_flit[o] &` |
+| XB-M2 | transposed select | `xb_flit[p] & {FLIT_WIDTH{xbar_sel[o][p]}}` | `xb_flit[p] & {FLIT_WIDTH{xbar_sel[p][o]}}` |
+| XB-M3 | VC path dropped | `issue_vc[o]   \|= xb_vc[p]   & {VC_W{xbar_sel[o][p]}};` | `issue_vc[o]   \|= '0;` |
+| XB-M4 | VC wrong index | `issue_vc[o]   \|= xb_vc[p]   &` | `issue_vc[o]   \|= xb_vc[o]   &` |
+| XB-M5 | stale output | `issue_flit[o] = '0;` | `issue_flit[o] = xb_flit[0];` |
+
+`M-005` mutants, `rtl/back/output_unit.sv`:
+
+| id | class | before | after |
+|---|---|---|---|
+| OU-M1 | off-by-one init | `ocredit_count[v] <= CNT_W'(BUFFER_DEPTH);` | `ocredit_count[v] <= CNT_W'(BUFFER_DEPTH-1);` |
+| OU-M2 | missing hold | `default: ocredit_count[v] <= ocredit_count[v];` | `default: ocredit_count[v] <= ({ret[v], send[v]} == 2'b11) ? ocredit_count[v] - CNT_W'(1) : ocredit_count[v];` |
+| OU-M3 | off-by-one threshold | `ocredit_avail[v] = (ocredit_count[v] != '0);` | `ocredit_avail[v] = (ocredit_count[v] > CNT_W'(1));` |
+| OU-M4 | missing reset | `out_flit_valid <= 1'b0;` (reset branch) | `out_flit_valid <= 1'b1;` |
+| OU-M5 | dropped qualifier | `ret[v]           = out_credit_valid && (out_credit_vc == VC_W'(v));` | `ret[v]           = out_credit_valid;` |
+| OU-M6 | register repeats flit | `out_flit_valid <= issue;` | `out_flit_valid <= issue \| out_flit_valid;` |
+| OU-M7 | debits every VC | `send[v]          = issue            && (issue_vc      == VC_W'(v));` | `send[v]          = issue;` |
+
+M-004 and M-005 are the first R2 rows that satisfy the rule below: every mutant is recorded as an
+exact source change, so any reviewer can reproduce the run. M-001, M-002 and M-003 cannot be, and
+stay provisional until they are re-injected and recorded.
+
 These are pilot measurements, not the paper's matrix. The paper's 37 mutants in 7 classes are injected only after the property plan is frozen.
  
 **Audit, 2026-11-03.** Every R2 and R3 row was first dated before the commit it cites existed: `edce4cc` was created 2026-10-21 00:47 IST (M-001, D-003 dated 19 Oct), `3ea9243` 2026-10-21 03:00 IST (M-003 dated 14 Oct), `08c0fdf` 2026-10-25 23:38 IST (M-002, D-001, D-002 dated 21 Oct). Those runs were made on pre-squash branch commits that the squash merge replaced, which breaks the first convention above.
