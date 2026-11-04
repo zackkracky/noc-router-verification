@@ -61,7 +61,13 @@ Injected mutants only. Real defects live in `docs/BUG_LOG.md` and `docs/bugs/`; 
 
 M-004 and M-005 are the first R2 rows that satisfy the rule below: every mutant is recorded as an
 exact source change, so any reviewer can reproduce the run. M-001, M-002 and M-003 cannot be, and
-stay provisional until they are re-injected and recorded.
+stay provisional until they are re-injected and recorded. Each mutant was applied alone to a clean
+tree and reverted before the next.
+
+Both rows are **Verilator-only**. Neither `tb_crossbar` nor `tb_output_unit` has been elaborated
+under `xrun`: Q-001 covers the eight tests that existed on 2026-10-28 and not these two. By the
+30 Oct entry condition they are not lab-qualified, and no paper sentence may present them as
+cross-tool results until a lab session adds the Q row.
 
 These are pilot measurements, not the paper's matrix. The paper's 37 mutants in 7 classes are injected only after the property plan is frozen.
  
