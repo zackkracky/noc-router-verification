@@ -69,6 +69,11 @@ under `xrun`: Q-001 covers the eight tests that existed on 2026-10-28 and not th
 30 Oct entry condition they are not lab-qualified, and no paper sentence may present them as
 cross-tool results until a lab session adds the Q row.
 
+Both rows were produced on the stimulus that exists after PM-003 (`docs/bugs/PM-003.md`) was
+fixed. Every mutant above was run at `SEED=1` alone, so the kill counts never depended on the
+seed axis, but the pre-fix stimulus was a different stream and the counts were re-confirmed on
+the post-fix source rather than carried over.
+
 These are pilot measurements, not the paper's matrix. The paper's 37 mutants in 7 classes are injected only after the property plan is frozen.
  
 **Audit, 2026-11-03.** Every R2 and R3 row was first dated before the commit it cites existed: `edce4cc` was created 2026-10-21 00:47 IST (M-001, D-003 dated 19 Oct), `3ea9243` 2026-10-21 03:00 IST (M-003 dated 14 Oct), `08c0fdf` 2026-10-25 23:38 IST (M-002, D-001, D-002 dated 21 Oct). Those runs were made on pre-squash branch commits that the squash merge replaced, which breaks the first convention above.
