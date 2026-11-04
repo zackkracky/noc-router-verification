@@ -4,7 +4,7 @@
 
 Parameterized 5-port wormhole NoC router (virtual channels, XY routing, round-robin switch allocation, credit-based flow control) and a SystemVerilog verification environment being built around it. Planned: constrained-random traffic with a reference-model scoreboard, a 52-property SVA library, functional coverage, and JasperGold proofs of the safety properties. The verification methodology is the contribution; the router is the vehicle. The planned paper will compare which bug classes constrained-random simulation, SVA in simulation and formal each catch, using 37 mutants in 7 classes.
 
-On `main` today (Phase 1): `noc_pkg`, `input_fifo`, `rr_arbiter` and `switch_allocator` unit-tested with CI green; FIFO properties P01-P06 bound and passing in CI; the finalised 52-property plan (v2) in `tb/sva/PLAN.md`; one JasperGold-found tool-portability finding (TP-001, not counted) and one property-caught pre-merge defect (PM-001) in `docs/BUG_LOG.md`. All eight tests qualified on Xcelium 28 Oct 2026 (lint + seeds 1-5 green). The scoreboard, coverage model and formal proofs are Phase 2 (Jan-Feb 2027); `formal/fifo.tcl` is the JasperGold entry point, `tb/cov/` does not exist yet.
+On `main` today (Phase 1b): `noc_pkg`, `input_fifo`, `rr_arbiter`, `switch_allocator`, `crossbar` and `output_unit` are unit-tested with CI green, and `router_top` is merged as a lint-only skeleton with the back half wired and the five input ports stubbed; `route_unit`, `input_port` and `vc_allocator` are not on `main` yet. Ten tests run under `make check` (lint plus seeds) on every PR and push, with two negative tests under `make neg`. FIFO properties P01-P06 are bound and passing in CI; the finalised 52-property plan (v2) is in `tb/sva/PLAN.md`, 6 of 52 written. One JasperGold-found tool-portability finding (TP-001) and one property-caught pre-merge defect (PM-001) are in `docs/BUG_LOG.md`; no defect in merged RTL has been counted yet. Eight tests were qualified on Xcelium on 28 Oct 2026 (lint + seeds 1-5 green); `tb_crossbar` and `tb_output_unit` have not been run there yet. The scoreboard, coverage model and formal proofs are Phase 2 (Jan-Feb 2027): `formal/fifo.tcl` is the JasperGold entry point; no property has been formally proven yet, and `tb/cov/` does not exist.
 
 Guide: Prof. P. Anuradha, CBIT.
 
@@ -121,14 +121,8 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
 | `rr_arbiter` | `rtl/back/rr_arbiter.sv` | Arnav | masked-priority round-robin arbiter, one-hot grant; one module for SA stage 1, SA stage 2 and VA (INTERFACE.md s7.2) | unit-tested (`tb_rr_arbiter`, #16) |
 | `switch_allocator` | `rtl/back/switch_allocator.sv` | Arnav | separable input-first SA, re-arbitrated every cycle; two `rr_arbiter` stages | unit-tested (`tb_switch_allocator`, #20); 7/7 mutants killed |
-<<<<<<< HEAD
 | `crossbar` | `rtl/back/crossbar.sv` | Arnav | 5x5 flit and VC mux: `xbar_sel[o][p]` selects `xb_flit`/`xb_vc` onto `issue_flit`/`issue_vc` (INTERFACE.md s7) | unit-tested (`tb_crossbar`, #29); 5/5 mutants killed |
-=======
-<<<<<<< HEAD
->>>>>>> 816c549 (credit: add output_unit with per-VC credit counters and model test)
-=======
 | `output_unit` | `rtl/back/output_unit.sv` | Arnav | output register, per-VC credit counter (credits only, no ownership); exports `ocredit_avail` and `ocredit_count` (INTERFACE.md s5.4, s7) | unit-tested (`tb_output_unit`, #30); 7/7 mutants killed |
->>>>>>> f1bc2fa (Update output_unit test case reference in README)
 | `router_top` | `rtl/back/router_top.sv` | Arnav | 5 input ports, VA, SA, crossbar, 5 output units; flat s4 ports | skeleton (#31): back half wired, `input_port` x5 stubbed, lint-only |
 
 Status values: planned, skeleton, unit-tested, integrated. "unit-tested" means lint clean and passing on `main`.

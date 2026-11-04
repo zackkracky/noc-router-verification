@@ -1,5 +1,7 @@
 # Reviewer per path. RTL halves are cross-listed: the listed user reviews, the other writes (CONTRIBUTING 8).
-# Reviewer per path. Never the author of the path.
+# Each PR needs an independent reviewer; the PR author cannot supply approval.
+# Multiple owners provide alternatives, not a requirement for both approvals.
+# Keep specific patterns after directory patterns: the last matching line wins.
 rtl/front/    @zackkracky
 rtl/back/     @revantharigela
 rtl/pkg/      @revantharigela
@@ -9,5 +11,7 @@ tb/sva/       @sachin19-02
 tb/cov/       @sachin19-02
 scripts/      @zackkracky
 docs/         @coolboy965
-Makefile      @sachin19-02
-.github/      @zackkracky
+Makefile      @sachin19-02 @zackkracky
+.github/      @zackkracky @sachin19-02
+# CODEOWNERS changes also need a reviewer outside the build/CI author pair.
+.github/CODEOWNERS @coolboy965 @revantharigela

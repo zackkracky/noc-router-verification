@@ -384,3 +384,17 @@ Blocked:
 Planned:
 
 - Nothing before 10 Dec. On resume: merge #29 and #30, rebase #31, add M-004 and M-005 to RESULTS.md, run the lab session.
+
+
+
+## 2026-11-04 (review follow-ups, Sachin)
+
+Prepared:
+- INTERFACE section 0 now includes switch_allocator and its test (#20), using main at b2be922 as the implementation snapshot. Crossbar (#29), output_unit (#30), and the router_top skeleton (#31) are also recorded as merged; the front half is still pending. DRAFT and all four pending sign-offs are retained.
+- PLAN S02 checks prior reservation provenance for registered egress; R12 remains the issue-time credit check. V10/R09 distinguish the measured SA candidate from proof; V11/V14 retain unresolved VA/system bounds rather than copying SA measurements into unrelated properties.
+- Makefile and .github/ have alternative independent code owners. The specific CODEOWNERS pattern routes ownership-file review to Aashish or Revanth.
+
+Pending independent verification:
+- PM-002 is on main through merged PR #28 and remains FIXED, awaiting independent verification. Proposed verifier: Sachin, independent of Revanth; no verification or closure sign-off is claimed by this entry.
+- Before signing the record, reproduce all four old/fixed TB x old/fixed RTL combinations at f5ab0b9 and ca65a74 using the commands in PR #28's docs/bugs/PM-002.md. Record tool version, exact commits, commands and observed results. Only after reproduction may the verifier sign that record and synchronize BUG_LOG metrics; do not copy an author's run as independent evidence.
+- Aashish and Revanth review the revised property assumptions; no new checker, formal proof or passing-property count is claimed.
