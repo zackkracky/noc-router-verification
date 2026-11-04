@@ -385,8 +385,6 @@ Planned:
 
 - Nothing before 10 Dec. On resume: merge #29 and #30, rebase #31, add M-004 and M-005 to RESULTS.md, run the lab session.
 
-
-
 ## 2026-11-04 (review follow-ups, Sachin)
 
 Prepared:

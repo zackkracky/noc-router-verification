@@ -1,9 +1,9 @@
 # SystemVerilog Assertion (SVA) Master Verification Plan (v2)
 
 **Owner**: Aashish (V2 — DV Formal & Paper Editor)  
-**Date**: 4 Nov 2026
+**Date**: 4 Nov 2026  
 **Applicability**: 5-port parameterized Virtual-Channel NoC Router (`noc-router-verification`)  
-**Status**: **52 planned, 40 passing is the Phase 2 exit floor. Current: 6/52 written, bound and passing in CI (P01–P06 on `tb_fifo`, seeds 1–3).**  
+**Status**: **52 planned, 40 passing is the Phase 2 exit floor. Current: 6/52 written, bound in `tb_fifo` and `tb_fifo_link` via `bind_all.sv`, passing in CI at seeds 1–5.**  
 **Simulation bounds**: Per-property bounds and assumptions are defined below. `N_SA = NUM_VCS*NUM_PORTS-1` is a measured SA candidate, not a proven universal bound. VA and system-progress bounds remain to be derived; 48 cycles is only a provisional smoke-test budget. Formal unbounded liveness uses `s_eventually` with explicit progress assumptions.
 
 ---
