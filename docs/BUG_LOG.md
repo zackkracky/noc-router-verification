@@ -11,6 +11,7 @@ Injected mutants are **not** here. They live in `docs/RESULTS.md` R2, because a 
 | id | title | sev | pri | class | block | status | found by | found | closed | record |
 |---|---|---|---|---|---|---|---|---|---|---|
 | PM-001 | `credit_out` asserts one cycle late | S2 | P1 | C1 | `input_fifo` | CLOSED | SVA-SIM | 2026-10-14 | 2026-10-14 | [PM-001](bugs/PM-001.md) |
+| PM-002 | `t_fifo` checked `credit_out` one cycle late and passed PM-001 | S2 | P1 | C1 | `t_fifo` (test of `input_fifo`) | FIXED | SVA-SIM | 2026-10-14 | — | [PM-002](bugs/PM-002.md) |
 | TP-001 | `input logic` illegal under `default_nettype none` | S4 | P1 | C7 | 5 files | FIXED | COMPILE | 2026-10-28 | — | [TP-001](bugs/TP-001.md) |
 
 ID prefixes: `B-nnn` a defect found in RTL already merged to `main`; `PM-nnn` caught on a branch before merge; `TP-nnn` a cross-tool portability finding with no functional symptom. Only `B-nnn` counts toward the Phase 2 exit floor. The prefix is part of the citation and never changes after the record is pushed — reclassification changes the `counts toward exit` field in the record, not the ID.
@@ -19,11 +20,11 @@ ID prefixes: `B-nnn` a defect found in RTL already merged to `main`; `PM-nnn` ca
 
 Counts are from the index and are recomputed when a row changes, not estimated.
 
-| Measure | Value as of 2026-10-29 |
+| Measure | Value as of 2026-11-03 |
 |---|---|
 | Counted bugs (`B-nnn`) in merged RTL | **0** — floor is 2 by 2027-02-28 |
-| Open (not CLOSED) | 1 (TP-001, awaiting a clean `analyze`) |
-| Pre-merge catches | 1 |
+| Open (not CLOSED) | 2 (PM-002 awaiting verifier sign-off; TP-001 awaiting a clean `analyze`) |
+| Pre-merge catches | 2 (PM-001 and PM-002, one event) |
 | Portability findings | 1 |
 | Reopened | 0 |
 | Records with no catching check | 0 |
@@ -33,7 +34,7 @@ By detection technique — the column dimension of the paper's matrix:
 
 | technique | count |
 |---|---|
-| SVA-SIM | 1 |
+| SVA-SIM | 2 |
 | COMPILE | 1 |
 | DIRECTED, CR, FORMAL, LINT, REVIEW, COV-HOLE | 0 |
 
@@ -41,8 +42,9 @@ Discovery by week. A project with no bug curve has no convergence evidence, so t
 
 | week beginning | found | closed | open at end |
 |---|---|---|---|
-| 2026-10-12 | 1 | 1 | 0 |
-| 2026-10-26 | 1 | 0 | 1 |
+| 2026-10-12 | 2 | 1 | 1 |
+| 2026-10-26 | 1 | 0 | 2 |
+| 2026-11-02 | 0 | 0 | 2 |
 
 Reading of the current numbers: 0 counted bugs with 3 of 10 modules merged is expected, not reassuring. Unit tests on blocks that already pass will not produce counted bugs; the scoreboard (`V08`, `V09`) and integration after `router_top` closes will. If the count is still 0 at the end of January, the Phase 2 exit is at risk and the response is to bring integration forward, not to lower the floor.
 

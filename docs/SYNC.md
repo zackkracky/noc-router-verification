@@ -341,3 +341,46 @@ Severity and priority are separate fields. TP-001 is S4 and P1: cosmetic in simu
 Class codes C1-C7 are provisional until Aashish checks them against PAPER_PLAN v1.0. They live in a field, not in the ID, so remapping is one PR.
 PM-001's fix is PR #13 (1fd956e), issue #11.the #11 in the commit subject is the issue.
 One front end is not verification. Lint and CI were green for weeks on source that was never legal SystemVerilog. Xcelium -elaborate on every merged test and analyze on each new block are now entry conditions, not optional lab extras.
+## 2026-11-03 (async, Arnav)
+
+Covers 3 Nov. Phase 1a did not close on 2 Nov. This session was worked inside the exam blackout (3 Nov - 9 Dec) by explicit decision; it is the exception, not a change to the rule. Nothing further is planned before 10 Dec.
+
+Done - back-half RTL, three PRs:
+
+- #29 `xbar: add 5x5 flit and VC crossbar with exhaustive one-hot test` (`arnav/crossbar`, off `main`). Ports are the INTERFACE.md s7 names: `xbar_sel[o][p]` selects `xb_flit[p]` and `xb_vc[p]` onto `issue_flit[o]` and `issue_vc[o]`; an unselected output reads zero. `tb_crossbar` runs four `(FLIT_WIDTH, NUM_VCS)` points, (64,2), (32,1), (128,4), (64,3), 2130 checks each.
+- #30 `credit: add output_unit with per-VC credit counters and model test` (`arnav/output-unit`, off `main`). Credits only (T9). `issue` loads the output register and debits `issue_vc`; a same-VC return nets zero; the register clears without a new issue (s5.2). Exports `ocredit_avail` and `ocredit_count` (s7, T11). `tb_output_unit` compares every counter exactly against a model every cycle at four `(F,V,D)` points, about 190k checks per seed.
+- #31 `rtl: add router_top skeleton with the back half wired, lint-only` (`arnav/router-top-skel`, stacked on #29 and #30, Draft). `rtl/back/router_top.sv`, flat s4 ports, internal s7 signals, granted-VC mux, `switch_allocator`, `crossbar`, five `output_unit`s. `input_port` x5 stubbed. Lint-clean with no waiver at four parameter points.
+- #23 (`arnav/router-top`) is superseded by #29-#31 and should be closed with its branch deleted: it did not elaborate.
+
+Validation (Verilator 5.020, the CI version, on clean checkouts):
+
+- `make check SEEDS="1 2 3 4 5"`: #29 alone 54/54 across 9 tests, #30 alone 54/54 across 9, #31 with both 60/60 across 10. `make neg` 2/2 on each.
+- Mutation, run through `make sim` so the `TEST PASSED` grep is the gate: crossbar 5/5 (flit from the output index, select transposed, VC stuck at zero, VC from the output index, unselected output not cleared); output_unit 7/7 (reset depth off by one, send plus return decrementing, avail threshold off by one, register not reset, return ignoring the credit VC, register repeating a flit, issue debiting every VC). The exact before/after lines are in the PR descriptions and go into RESULTS.md as M-004 and M-005 once the PRs merge.
+- Not run: Xcelium, JasperGold, Verilator 5.032. Per the 30 Oct entry condition, these are not lab-qualified until the next lab session.
+
+Done - documentation audit against code, Makefile, CI, and history:
+
+- `make lint-rtl` now resolves submodules with `-y rtl/front -y rtl/back`; it failed on any file that instantiates another, including `switch_allocator.sv` on `main`.
+- RESULTS.md: every R2/R3 row was dated before the commit it cites existed (runs were on pre-squash branch commits). D-001, D-002, D-003 re-run on the cited commits: identical to the last digit. The M rows cannot be re-run because no mutant is recorded in the repository; noted in R2. Q-005 repeats Q-004 on the merged TP-001 fix `907433f`: 32/32, 2/2.
+- PM-001: reproduce steps rewritten to run from the real pre-fix commit `f5ab0b9` with the original `fifo_sva` at `7af0beb`, re-run with P06 failing at 95 ns on seeds 1-3 as recorded. Line references corrected, and the closure regression line no longer cites `make check`, which did not exist on 14 Oct.
+- PM-002 written, retroactively, under BUG_LOG.md rule 4 and the 30 Oct decision: the two `t_fifo` checks that certified PM-001 as correct. A 2x2 of old/fixed test against old/fixed RTL proves it: the old test passes 86 checks on the defective RTL and fails on the correct one.
+- STATE.md refreshed to today; README gains a Results block, a licence line, and fixes to the stale check count, convention 9 (now matches INTERFACE.md s1) and the stacked-branch rule; SETUP.md loses two stale claims.
+
+Decisions and notes for everyone:
+
+- The 3 Nov PRs follow INTERFACE.md s4 and s7 names exactly, so R06 and R10-R14 in PLAN.md bind without renaming. Earlier drafts used `_i`/`_o` suffixes and `FLIT_W`; every merged module uses bare spec names and `FLIT_WIDTH`, and so do these.
+- `output_unit` drives `out_flit_valid` from `issue`, and the VC now travels through the crossbar with the flit, so `out_flit_vc` is a real path rather than a tied-off zero.
+- Aashish: PLAN.md S02 (`flit_valid |-> ocredit_avail[o][flit_vc]`) fires on legal behaviour. INTERFACE.md s5.2 allows a registered `out_flit_valid` with the counter at zero, s9 says the same, and s10 warns against exactly this check. R12 (`issue |-> ocredit_avail[o][issue_vc[o]]`) is the correct form. Also, STATE and this file called the switch-allocator starvation property "A-series"; it is R09, and R09 still cites N = 48 where D-001 measured `N_SA`.
+- Sachin: INTERFACE.md s0 still lists `switch_allocator` as unwritten (merged #20) and is dated to `7df0cca`.
+- Every mutant from here on is recorded as its exact source change, or the row is not auditable.
+
+Blocked:
+
+- `rtl/front/route_unit.sv`, on no branch ten days after its date. Nothing router-level can be tested until `input_port` exists. Revanth.
+- Scoreboard v1 (Aashish, due 2 Nov) has not landed.
+- `xrun` and `jg` re-runs, both at the next lab session.
+- Semester 5 mid-sem 2 and all semester 6 dates.
+
+Planned:
+
+- Nothing before 10 Dec. On resume: merge #29 and #30, rebase #31, add M-004 and M-005 to RESULTS.md, run the lab session.

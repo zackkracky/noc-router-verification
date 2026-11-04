@@ -23,7 +23,7 @@ Applies to all four members. Revision: 21 October 2026 (converted from the team'
 | Windows Terminal | Windows | Tabs, copy/paste, Ubuntu profile |
 | VS Code + WSL extension | Windows, edits inside WSL | Editor; the WSL extension opens files from the Ubuntu side |
 | git | Ubuntu (apt) | Version control over SSH |
-| Verilator 5.020 | Ubuntu (apt) | Lint and fast-seed simulation. Same version as CI, so local green means CI green |
+| Verilator 5.020 | Ubuntu (apt) | Lint and fast-seed simulation. 5.020 is the CI version; apt on Ubuntu 24.04 gives it. Other versions (the team runs 5.020, 5.024 and 5.032) can differ in `-Wall` warnings, so CI is the authority and results are quoted with the version |
 | Icarus Verilog 12 | Ubuntu (apt) | Second simulator; catches Verilator-specific assumptions |
 | GTKWave | Ubuntu (apt) | Waveform viewer, opens as a Windows window through WSLg |
 | build-essential, make | Ubuntu (apt) | g++ for Verilator's generated C++; `make` drives the flow |
@@ -250,7 +250,7 @@ make check SEEDS="1 2 3 4 5"
 make neg
 ```
 
-`make check` lints and simulates every `tb/tests/*.f` and writes `logs/summary.txt`. CI runs `make check SEEDS="1 2 3 4 5"` followed by `make neg`: 42 regression checks and two expected-failure checks. Negative-test results are in `logs/negative-summary.txt`. Single test: `make sim TEST=tb_fifo SEED=1`. Waveforms: `make sim TEST=tb_fifo SEED=1 WAVES=1` then `make waves TEST=tb_fifo`. On the lab machine add `SIM=xcelium` to `make check` or `make sim`. `make neg` uses Verilator only; Xcelium fatal-message matching remains pending qualification.
+`make check` lints and simulates every `tb/tests/*.f` and writes `logs/summary.txt`. CI runs `make check SEEDS="1 2 3 4 5"` followed by `make neg`: one lint plus five seeds for every test, and two expected-failure checks. Negative-test results are in `logs/negative-summary.txt`. Single test: `make sim TEST=tb_fifo SEED=1`. Waveforms: `make sim TEST=tb_fifo SEED=1 WAVES=1` then `make waves TEST=tb_fifo`. On the lab machine add `SIM=xcelium` to `make check` or `make sim`. `make neg` uses Verilator only; Xcelium fatal-message matching remains pending qualification.
 
 ## 7. Daily workflow (nobody pushes to main)
 
