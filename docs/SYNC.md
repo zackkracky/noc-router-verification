@@ -396,3 +396,16 @@ Pending independent verification:
 - PM-002 is on main through merged PR #28 and remains FIXED, awaiting independent verification. Proposed verifier: Sachin, independent of Revanth; no verification or closure sign-off is claimed by this entry.
 - Before signing the record, reproduce all four old/fixed TB x old/fixed RTL combinations at f5ab0b9 and ca65a74 using the commands in PR #28's docs/bugs/PM-002.md. Record tool version, exact commits, commands and observed results. Only after reproduction may the verifier sign that record and synchronize BUG_LOG metrics; do not copy an author's run as independent evidence.
 - Aashish and Revanth review the revised property assumptions; no new checker, formal proof or passing-property count is claimed.
+
+## 2026-11-08 (docs, Arnav)
+
+Prepared:
+- STATE.md refreshed from `4f8a9b2` to `9b3b098`: open-PR table removed (#29-#31 merged 4 Nov), crossbar/output_unit/router_top rows on `main`, counters restated as an explicit module list (the "of 10" denominator is retired), tests 8 to 10.
+- PM-003 s2: the pre-fix hashes `3291c4c`/`b72c73b` are not on the remote. Replaced with `b51d2bc`/`b0ba389` (pre-fix) and `5f8176a`/`b8cb845` (post-fix) from `pull/29/head` and `pull/30/head`, tree-identical to `8b9bf45`/`9d77c0d`.
+- `LICENSE`: Apache-2.0, verbatim (11358 bytes, sha256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`). README licence line replaced by a License section.
+
+Decisions pending:
+- Licence: proposed 8 Nov, replies by 12 Nov. The PR merges only with a yes from Revanth, Sachin and Aashish on the PR itself. A no from anyone: drop `LICENSE` and the README/STATE lines from the PR, keep the rest.
+
+Pending independent verification:
+- PM-003: proposed verifier Sachin, by 13 Nov. No sign-off is claimed by this entry. A sign-off does not close the record; BUG_LOG rule 3 still needs an automated two-seed check or a team decision accepting the manual probe.
