@@ -25,7 +25,9 @@ Every number traces to a row in `docs/RESULTS.md` naming the commit, command and
 
 Formal proofs: none yet. Counted RTL bugs (`B-nnn`): 0 of the 2 the Phase 2 exit requires.
 
-No license file yet, so default copyright applies and no reuse rights are granted. Choosing one is a pending team decision.
+## License
+
+Apache License 2.0, full text in [`LICENSE`](LICENSE). Copyright 2026 the noc-router-verification contributors. Covers RTL, testbenches, assertions, scripts and docs; contributions are accepted under the same terms (Apache-2.0 s5).
 
 ## Team
 
@@ -85,6 +87,7 @@ Filelist resolution: `tb/tests/<TEST>.f` if it exists, else `filelist.f`; `FILEL
 | `scripts/` | planned: `regress.sh`, `cov_merge.py`, `mutate.py` (Phase 2) | Arnav |
 | `docs/` | `INTERFACE.md`, `STATE.md`, `SYNC.md`, `BUG_LOG.md`, `wavedrom/` timing diagrams, `figures/` | Aashish |
 | `docs/wavedrom/` | `head_pipeline.json`, `credit_stall.json` and rendered PNGs; the timing reference for INTERFACE.md s5 | Aashish |
+| `LICENSE` | Apache License 2.0, verbatim; changing it needs all four owners | all |
 
 `tb/cov/`, `fpga/`, `docs/paper/` are added by PR when their first file exists (Phase 2, Phase 3, Mar 2027). `formal/` holds the JasperGold Tcl per block (`fifo.tcl` first); proofs themselves are Phase 2.
 
