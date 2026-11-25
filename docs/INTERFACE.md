@@ -282,6 +282,15 @@ The granted-VC mux may sit in the front or top-level wiring, but it implements t
 
 VA guarantees at most one owner for each output VC **and at most one output-VC grant per input VC**. Independent output-VC arbiters require tie-breaking to enforce the second rule. Requests may stay high while waiting; a grant moves the requester to ACTIVE so it cannot repeatedly acquire VCs. Store the owner mapping until release. `ovc_free` and grants use pre-edge busy state: release at Ek makes the VC eligible in C(k+1), not for a simultaneous reassignment at Ek. The old tail is already in the output register and retains its own VC sideband.
 
+Current branch implementation: `rtl/front/vc_allocator.sv` instantiates one
+`rr_arbiter` per output VC, filters requests for busy output VCs, and maintains
+one busy/owner mapping. Its directed test is `tb/tests/tb_vc_allocator.sv`
+(filelist: `tb/tests/tb_vc_allocator.f`). The test currently checks reset,
+allocation, busy blocking, release timing, and simultaneous contention. It
+passes locally with Verilator seeds 1, 2 and 3. Round-robin fairness and
+Xcelium qualification remain to be tested; this is not interface sign-off.
+
+
 ### 7.1 Per-VC state and nominal HEAD timing
 
 IDLE → ROUTING → WAIT_VC → ACTIVE → IDLE on TAIL/HEAD_TAIL dequeue. While ACTIVE, FIFO gaps do not release the VC. Reset clears the state and allocation. Release identifies the input owner `(p,v)`; the allocator's mapping identifies which output VC to free.
