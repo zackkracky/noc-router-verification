@@ -140,6 +140,79 @@ module tb_vc_allocator;
         check($countones(va_grant) <= 1,
               "no input VC receives duplicate grants");
 
+        // Test 6: round-robin fairness for one output VC.
+        // Keep output VC 1 occupied so only output VC 0 arbitrates.
+        reset_dut();
+
+        @(negedge clk);
+        va_req[4][1] = 1;
+        va_out_port[4][1] = PORT_W'(2);
+        #1;
+        check(va_grant[4][1] && va_out_vc[4][1] == VC_W_T'(0),
+              "fairness setup allocates output VC 0");
+
+        @(posedge clk);
+        #1;
+        @(negedge clk);
+        va_req[4][0] = 1;
+        va_out_port[4][0] = PORT_W'(2);
+        #1;
+        check(va_grant[4][0] && va_out_vc[4][0] == VC_W_T'(1),
+              "fairness setup reserves output VC 1");
+
+        @(posedge clk);
+        #1;
+        @(negedge clk);
+        va_req[4][1] = 0;
+        va_release[4][1] = 1;
+        @(posedge clk);
+        #1;
+        check(ovc_free[2][0] && !ovc_free[2][1],
+              "only output VC 0 is free for fairness test");
+
+        @(negedge clk);
+        va_release[4][1] = 0;
+        va_req[0][0] = 1;
+        va_req[1][0] = 1;
+        va_req[2][0] = 1;
+        va_out_port[0][0] = PORT_W'(2);
+        va_out_port[1][0] = PORT_W'(2);
+        va_out_port[2][0] = PORT_W'(2);
+
+        // VC 0's pointer starts at requester 0 after the setup allocation
+        // wrapped past requester index 9.
+        for (int k = 0; k < 4; k++) begin
+            int expected_port;
+
+            case (k)
+                0: expected_port = 0;
+                1: expected_port = 1;
+                2: expected_port = 2;
+                default: expected_port = 0;
+            endcase
+
+            #1;
+            check(va_grant[expected_port][0] &&
+                  (va_out_vc[expected_port][0] == VC_W_T'(0)) &&
+                  ($countones(va_grant) == 1),
+                  $sformatf("round-robin turn %0d goes to input %0d",
+                            k, expected_port));
+
+            @(posedge clk);
+            #1;
+            @(negedge clk);
+            va_release[expected_port][0] = 1;
+            @(posedge clk);
+            #1;
+            @(negedge clk);
+            va_release[expected_port][0] = 0;
+        end
+
+        // Remove requests before the final result check.
+        va_req[0][0] = 0;
+        va_req[1][0] = 0;
+        va_req[2][0] = 0;
+
         if (errors == 0) begin
             $display("--------------------------------");
             $display("TEST PASSED");
