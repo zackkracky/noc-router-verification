@@ -55,6 +55,8 @@ module route_unit #(
                 out_port_onehot = '0;
             end
 
+            $error("Unsupported ROUTE_ALGO: %s", ROUTE_ALGO);
+
         end
     endgenerate
 

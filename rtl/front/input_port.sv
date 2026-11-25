@@ -73,7 +73,15 @@ module input_port
     logic [NUM_VCS-1:0] fifo_empty;
     logic unused_fifo_status;
 
-    logic [NUM_VCS-1:0][NUM_PORTS-1:0] route_onehot;
+    logic [NUM_PORTS-1:0] route_onehot;
+    logic [NUM_VCS-1:0] route_req;
+    logic [NUM_VCS-1:0] route_sel;
+    logic route_sel_valid;
+    logic [VC_W-1:0] route_sel_idx;
+    logic [VC_W-1:0] route_rr_ptr;
+    logic [COORD_W-1:0] route_dst_x;
+    logic [COORD_W-1:0] route_dst_y;
+    logic route_result_valid;
     logic [NUM_VCS-1:0][PORT_W-1:0] held_out_port;
     logic [NUM_VCS-1:0][VC_W-1:0] held_out_vc;
 
@@ -115,24 +123,63 @@ module input_port
             .credit_out (fifo_credit_out[v])
         );
 
-        route_unit #(
-            .ROUTE_ALGO   (ROUTE_ALGO),
-            .X_COORD      (X_COORD),
-            .Y_COORD      (Y_COORD),
-            .NUM_VCS      (NUM_VCS),
-            .BUFFER_DEPTH (BUFFER_DEPTH)
-        ) u_route_unit (
-            .dst_x (
-                fifo_rd_data[v][FLIT_WIDTH-3 -: COORD_W]
-            ),
-            .dst_y (
-                fifo_rd_data[v][FLIT_WIDTH-6 -: COORD_W]
-            ),
-            .in_port         (PORT_W'(IN_PORT)),
-            .route_credit    (ocredit_count),
-            .out_port_onehot (route_onehot[v])
-        );
+    end
 
+    // ------------------------------------------------------------
+    // Shared round-robin route computation
+    // ------------------------------------------------------------
+
+    always_comb begin
+        route_req = '0;
+        route_sel = '0;
+        route_sel_valid = 1'b0;
+        route_sel_idx = '0;
+        route_dst_x = '0;
+        route_dst_y = '0;
+
+        // Identify VCs whose head flit is ready for routing.
+        for (int unsigned v = 0; v < NUM_VCS; v++) begin
+            route_req[v] = (state[v] == ST_ROUTING) && fifo_rd_valid[v];
+        end
+
+        // Select at most one routing request, starting at the RR pointer.
+        for (int unsigned offset = 0; offset < NUM_VCS; offset++) begin
+            for (int unsigned v = 0; v < NUM_VCS; v++) begin
+                if ((v == ((int'(route_rr_ptr) + offset) % NUM_VCS)) &&
+                    route_req[v] && !route_sel_valid) begin
+                    route_sel[v] = 1'b1;
+                    route_sel_valid = 1'b1;
+                    route_sel_idx = VC_W'(v);
+                    route_dst_x = fifo_rd_data[v][FLIT_WIDTH-3 -: COORD_W];
+                    route_dst_y = fifo_rd_data[v][FLIT_WIDTH-6 -: COORD_W];
+                end
+            end
+        end
+    end
+
+    route_unit #(
+        .ROUTE_ALGO   (ROUTE_ALGO),
+        .X_COORD      (X_COORD),
+        .Y_COORD      (Y_COORD),
+        .NUM_VCS      (NUM_VCS),
+        .BUFFER_DEPTH (BUFFER_DEPTH)
+    ) u_route_unit (
+        .dst_x           (route_dst_x),
+        .dst_y           (route_dst_y),
+        .in_port         (PORT_W'(IN_PORT)),
+        .route_credit    (ocredit_count),
+        .out_port_onehot (route_onehot)
+    );
+
+    // A route result is valid only when exactly one output is selected.
+    always_comb begin
+        route_result_valid = 1'b0;
+        case (route_onehot)
+            5'b00001, 5'b00010, 5'b00100, 5'b01000, 5'b10000:
+                route_result_valid = 1'b1;
+            default:
+                route_result_valid = 1'b0;
+        endcase
     end
 
     // ------------------------------------------------------------
@@ -196,6 +243,7 @@ module input_port
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
+            route_rr_ptr <= '0;
             for (int unsigned v = 0; v < NUM_VCS; v++) begin
                 state[v]         <= ST_IDLE;
                 held_out_port[v] <= '0;
@@ -203,6 +251,13 @@ module input_port
             end
         end
         else begin
+            if (route_sel_valid && route_result_valid) begin
+                if (route_sel_idx == VC_W'(NUM_VCS - 1))
+                    route_rr_ptr <= '0;
+                else
+                    route_rr_ptr <= route_sel_idx + VC_W'(1);
+            end
+
             for (int unsigned v = 0; v < NUM_VCS; v++) begin
 
                 case (state[v])
@@ -218,7 +273,8 @@ module input_port
                     // Route must be a valid one-hot value.
                     // Invalid routes remain in ST_ROUTING.
                     ST_ROUTING: begin
-                        case (route_onehot[v])
+                        if (route_sel[v] && route_result_valid) begin
+                            case (route_onehot)
                             5'b00001: begin
                                 held_out_port[v] <= PORT_W'(NORTH);
                                 state[v] <= ST_WAIT_VC;
@@ -244,10 +300,11 @@ module input_port
                                 state[v] <= ST_WAIT_VC;
                             end
 
-                            default: begin
-                                // Invalid route: remain in ST_ROUTING.
-                            end
-                        endcase
+                                default: begin
+                                    // Invalid route: remain in ST_ROUTING.
+                                end
+                            endcase
+                        end
                     end
 
                     ST_WAIT_VC: begin

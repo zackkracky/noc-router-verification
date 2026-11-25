@@ -316,11 +316,20 @@ module tb_input_port;
         @(negedge clk);
         in_flit_valid = 1'b0;
 
-        repeat (3) @(negedge clk);
+        // VC 0 must receive the first shared route result.
+        @(negedge clk);
         #1;
+        if (va_req !== 2'b01)
+            $fatal(1, "Expected VC 0 to reach VA before VC 1");
 
+        if (va_out_port[0] !== 3'd4)
+            $fatal(1, "VC 0 expected LOCAL route");
+
+        // VC 1 must receive the next route result.
+        @(negedge clk);
+        #1;
         if (va_req !== 2'b11)
-            $fatal(1, "Expected independent VA requests from both VCs");
+            $fatal(1, "Expected VC 1 to reach VA after VC 0");
 
         if (va_out_port[0] !== 3'd4)
             $fatal(1, "VC 0 expected LOCAL route");
