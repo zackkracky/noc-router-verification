@@ -121,7 +121,7 @@ One line per module. Updated in the same PR that lands or changes the module (in
 | `input_fifo` | `rtl/front/input_fifo.sv` | Revanth | synchronous FWFT FIFO per VC, `count`, combinational `credit_out` on dequeue | unit-tested (`tb_fifo`, PR #13); PM-001 fixed before merge |
 | `route_unit` | `rtl/front/route_unit.sv` | Revanth | combinational XY route compute, `out_port_onehot[4:0]`; `route_credit` input reserved for WF | planned |
 | `input_port` | `rtl/front/input_port.sv` | Revanth | `NUM_VCS` FIFOs, per-VC state machine, registered credit return, SA request | planned |
-| `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | planned |
+| `vc_allocator` | `rtl/front/vc_allocator.sv` | Revanth | output VC allocation, round-robin per output VC, single busy/owner table | implemented on branch; directed test passes seeds 1-3; pending review/merge |
 | `rr_arbiter` | `rtl/back/rr_arbiter.sv` | Arnav | masked-priority round-robin arbiter, one-hot grant; one module for SA stage 1, SA stage 2 and VA (INTERFACE.md s7.2) | unit-tested (`tb_rr_arbiter`, #16) |
 | `switch_allocator` | `rtl/back/switch_allocator.sv` | Arnav | separable input-first SA, re-arbitrated every cycle; two `rr_arbiter` stages | unit-tested (`tb_switch_allocator`, #20); 7/7 mutants killed |
 | `crossbar` | `rtl/back/crossbar.sv` | Arnav | 5x5 flit and VC mux: `xbar_sel[o][p]` selects `xb_flit`/`xb_vc` onto `issue_flit`/`issue_vc` (INTERFACE.md s7) | unit-tested (`tb_crossbar`, #29); 5/5 mutants killed |
