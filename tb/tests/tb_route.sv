@@ -4,9 +4,14 @@
 
 module tb_route;
 
+    localparam int unsigned NUM_VCS = 2;
+    localparam int unsigned BUFFER_DEPTH = 4;
+    localparam int unsigned CNT_W = noc_pkg::cnt_w(BUFFER_DEPTH);
+
     logic [2:0] dst_x;
     logic [2:0] dst_y;
     logic [2:0] in_port;
+    logic [4:0][NUM_VCS-1:0][CNT_W-1:0] route_credit;
     logic [4:0] out_port_onehot;
 
     integer x;
@@ -15,12 +20,15 @@ module tb_route;
 
     route_unit #(
         .ROUTE_ALGO("XY"),
-        .X_COORD(3'd3),
-        .Y_COORD(3'd3)
+        .X_COORD(3),
+        .Y_COORD(3),
+        .NUM_VCS(NUM_VCS),
+        .BUFFER_DEPTH(BUFFER_DEPTH)
     ) dut (
         .dst_x(dst_x),
         .dst_y(dst_y),
         .in_port(in_port),
+        .route_credit(route_credit),
         .out_port_onehot(out_port_onehot)
     );
 
@@ -44,6 +52,7 @@ module tb_route;
         dst_x = '0;
         dst_y = '0;
         in_port = 3'd4;
+        route_credit = '0;
         checks = 0;
 
         for (x = 0; x < 8; x = x + 1) begin
