@@ -43,12 +43,6 @@ module input_fifo #(
     assign do_write = wr_valid && !full;
     assign do_read  = rd_ready && !empty;
 
-    initial begin
-        if (DEPTH < 2 || (DEPTH & (DEPTH - 1)) != 0) begin
-            $error("input_fifo: DEPTH must be a power of two and at least 2");
-        end
-    end
-
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             wr_ptr <= '0;
