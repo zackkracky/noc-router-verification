@@ -495,6 +495,56 @@ module tb_input_port;
         if (sa_req[0] !== 1'b0 || va_req[0] !== 1'b0)
             $fatal(1, "Input VC did not return to idle after backpressure test");
 
+        // --------------------------------------------------------
+        // Reset during activity: clear a pending VA request
+        // --------------------------------------------------------
+
+        in_flit = '0;
+        in_flit[FLIT_WIDTH-1 -: 2] = FTYPE_HEAD_TAIL;
+        in_flit[FLIT_WIDTH-3 -: 3] = ROUTER_X;
+        in_flit[FLIT_WIDTH-6 -: 3] = ROUTER_Y;
+
+        @(negedge clk);
+        in_flit_vc    = VC_W'(0);
+        in_flit_valid = 1'b1;
+
+        @(negedge clk);
+        in_flit_valid = 1'b0;
+
+        repeat (3) @(negedge clk);
+        #1;
+
+        if (va_req[0] !== 1'b1)
+            $fatal(1, "Reset test failed to create pending VA request");
+
+        // Reset before the allocator grants the output VC.
+        @(negedge clk);
+        rst_n = 1'b0;
+
+        repeat (2) @(negedge clk);
+        #1;
+
+        if (va_req !== '0 || sa_req !== '0)
+            $fatal(1, "Reset did not clear pending allocator requests");
+
+        if (in_credit_valid !== 1'b0)
+            $fatal(1, "Reset did not clear upstream credit valid");
+
+        // Release reset and verify that no stale packet reappears.
+        @(negedge clk);
+        rst_n = 1'b1;
+
+        repeat (3) @(negedge clk);
+        #1;
+
+        if (va_req !== '0 || sa_req !== '0)
+            $fatal(1, "Stale packet request remained after reset");
+
+        if (in_credit_valid !== 1'b0)
+            $fatal(1, "Unexpected upstream credit after reset recovery");
+
+        checks = checks + 1;
+
         $display("Checked %0d input_port behaviours", checks);
         $display("TEST PASSED");
         $finish;
